@@ -40,13 +40,12 @@ void ParseFileToAdjacency(const bool directed, const std::string filename) {
             } else {
                 _t = (size_t) atoi(c_buff);
                 if (_t > 0) {
-                    t_list.push_back(_t);
+                    t_list.push_back(_t - 1);
                 }
             }
             c_buff = strtok(NULL, "  \t");
         }
 
-        //int x = getchar();
         std::cout << "Line " << no_lines << " has " << t_list.size() << " ints\n";
         adj_lists.push_back(t_list);
         t_list.clear();
@@ -55,9 +54,11 @@ void ParseFileToAdjacency(const bool directed, const std::string filename) {
 
     std::cout << "--------\n";
     UGraph g = UGraph(false, adj_lists);
-
-    size_t x;
-    g.KargerMinCut(&g, &x);
+    std::cout << "G has " << g.n_vertices() << " vertices and " << g.n_edges() << " edges\n";
+    UGraph::Contract(&g, (size_t)1, (size_t)3);
+    std::cout << "G has " << g.n_vertices() << " vertices and " << g.n_edges() << " edges\n";
+    //size_t x;
+    //g.KargerMinCut(&g, &x);
 }
 
 
