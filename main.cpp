@@ -46,19 +46,45 @@ void ParseFileToAdjacency(const bool directed, const std::string filename) {
             c_buff = strtok(NULL, "  \t");
         }
 
-        std::cout << "Line " << no_lines << " has " << t_list.size() << " ints\n";
         adj_lists.push_back(t_list);
         t_list.clear();
         no_lines ++;
     }
 
-    std::cout << "--------\n";
     UGraph g = UGraph(false, adj_lists);
-    std::cout << "G has " << g.n_vertices() << " vertices and " << g.n_edges() << " edges\n";
-    UGraph::Contract(&g, (size_t)1, (size_t)3);
-    std::cout << "G has " << g.n_vertices() << " vertices and " << g.n_edges() << " edges\n";
-    //size_t x;
-    //g.KargerMinCut(&g, &x);
+    g.to_s();
+
+    g.RemoveVertex(2);
+    g.to_s();
+
+
+    g.RemoveVertex(2);
+    g.to_s();
+
+    g.RemoveVertex(3);
+    g.to_s();
+    
+    g.RemoveVertex(1);
+    g.to_s();
+
+    g.RemoveVertex(0);
+    g.to_s();
+
+    UGraph::Contract(&g, (size_t)1, (size_t)0);
+    g.to_s();
+    
+    UGraph::Contract(&g, (size_t)1, (size_t)0);
+    g.to_s();
+
+    char _tft_ = getchar();
+
+    size_t x;
+    /*
+    for (auto l = 0; l < 15; l++) {
+        g.KargerMinCut(&g, &x);
+        std::cout << "Minimum cut size of graph is: " << x << "\n";
+    }
+    */
 }
 
 
