@@ -1,5 +1,3 @@
-// define Graph::ReadFileAsMatrix(int n);
-//
 // April 18 - 12:13 PM -- Start on notes
 // 			  12:45 PM -- Code
 // 	          1:45  PM -- Break -- restart pc 
@@ -17,7 +15,7 @@
 #include <vector>
 #include <algorithm> 
 #include "utils.cpp"
-#define DEBUG_MODE true
+#define DEBUG_MODE 0
 #define DebugPrint(str ...) if(DEBUG_MODE) printf(str);
 #define WarnPrint(str ...) printf(str);
 
@@ -27,68 +25,46 @@ class UGraph
 
 	size_t n;
 	size_t m;
-    bool directed;
+
     std::vector<std::vector<size_t>> adj_lists;
 	std::vector<bool> is_v_deleted;
 
-    // This moves the edges from a removee and places them to a replacee
-	// @todo check if works for Ugraph and Dgraph
-	//
-	// Assert that if e is an edge in removee --> e is an edge in replacee
-	void RenameEdges(size_t replacee, size_t removee) {
-		if (removee == replacee) {return;}
-		if (is_v_deleted[removee] || is_v_deleted[replacee]) {return;}
-
-		DebugPrint("Renaming Edges\n\tsource: %d - target: %d\n", removee+1, replacee+1)
-		// loop over ALL vertices -- count = n
-		for (int x=0; x < n_vertices(); x++) {
-			// loop over adj list of a vertex -- count ~ max |n|, min |0|.. the SUM of all this loop is constant, it is 2M
-			for(int y = 0; y < adj_lists[x].size(); y++) {
-				if (adj_lists[x][y] == removee) {
-					adj_lists[x][y] = replacee;
-				}
-			}
-		}
-		return;
-	}
-
 	public:
+
 	size_t n_vertices() {return n;}
-	size_t n_edges() {if (directed) return m; return (m/2 - m%2);}
+	size_t n_edges() {return (m/2);}
+	size_t get_m() {return m;}
+
 	/* Constructors */
 	UGraph() {
 		this->n = 0;
 		this->m = 0;
-        this->directed = false;
+		// @todo add the pointers / arrays... they will be problematic.
 	}
 	
 	// Copy Constructor
 	UGraph(UGraph *pGraph) {
-		// @todo copy constructor;
-		this->directed = pGraph->directed;
 		this->n = pGraph->n;
 		this->m = pGraph->m;
-		this->adj_lists = pGraph->adj_lists; // is this copying or is it moving pointers?
+		// @todo probably a bug: is this copying or is it moving pointers?
+		this->adj_lists = pGraph->adj_lists;
 		this->is_v_deleted = pGraph->is_v_deleted;
 	}
 
-	// =Operator
-
-	// new operator
-
 	// Adjacency List Constructor
-	UGraph(bool is_dag, const std::vector<std::vector<size_t>> adj_lists) {
+	UGraph(const std::vector<std::vector<size_t>> adj_lists) {
+		DebugPrint("Call: UGraph Adj. List Constructor\n")
 		size_t _m = 0;
+		size_t _n = adj_lists.size();
 
 		for (auto i = 0; i < adj_lists.size(); i ++) {
 			_m += adj_lists[i].size();
 		}
 
-		this->n = adj_lists.size();
-		this->is_v_deleted = std::vector<bool>(adj_lists.size(), false);
+		this->n = _n;
+		this->is_v_deleted = std::vector<bool>(_n, false);
 		this->m = _m;
-		this->directed = is_dag;
-		this->adj_lists = adj_lists;
+		this->adj_lists = adj_lists; 
 	}
 
 	/* Desctructors */
@@ -101,7 +77,7 @@ class UGraph
 		size_t nvertices = adj_lists.size();
 		size_t i,j;
 
-		printf("\n== G has %d vertices and %d edges ==\n------------------------------\n", n_vertices(), n_edges());
+		printf("\n* G has %d vertices and %d edges \n------------------------------\n", n_vertices(), n_edges());
 		for (i = 0;i < nvertices; i++) {
 			size_t m_edges = adj_lists[i].size(); 
 			printf("\t%d ", i+1);
@@ -120,41 +96,86 @@ class UGraph
 
 	/* Operations */
 
+    // This moves the edges from a removee and places them to a replacee
+	// @todo check if works for Ugraph and Dgraph
+	//
+	// Assert that if e is an edge in removee --> e is an edge in replacee
+	void RenameEdges(const size_t replacee, size_t removee) {
+		DebugPrint("Call: RenameEdges\n\tsource: %d - target: %d\n", removee+1, replacee+1)
+		if (removee == replacee) {
+			WarnPrint("ERROR: Same Vertex\n")
+			return;
+			}
+		if (is_v_deleted[removee] || is_v_deleted[replacee]) {
+			WarnPrint("ERROR: Operating On a Deleted Vertex\n")
+			return;
+		}
+
+		for (int x=0; x < n_vertices(); x++) {
+			for(int y = 0; y < adj_lists[x].size(); y++) {
+				if (adj_lists[x][y] == removee) {
+					adj_lists[x][y] = replacee;
+				}
+			}
+		}
+		return;
+	}
+
 	// Adds a single edge between two vertices.
 	void AddEdge(size_t i, size_t j) {
 		DebugPrint("Adding Edge (%d, %d)\n", i+1, j+1)
-		if (is_v_deleted[i] || is_v_deleted[j]) {return;} // #add warns messages
+		if (is_v_deleted[i] || is_v_deleted[j]) {
+			WarnPrint("ERROR: Operating On a Deleted Vertex\n")
+			return;
+		}
+
         adj_lists[i].push_back(j);
-        if (!this->directed) {adj_lists[j].push_back(i); this->m++;}
+		this->m++;
+        adj_lists[j].push_back(i); 
 		this->m++;
 	}
 
 	void CopyEdges(size_t src, size_t target) {
-		if (is_v_deleted[src] || is_v_deleted[target]) {return;} // #add warns messages
-		DebugPrint("\t Copying Edges of %d to %d\n", src+1, target+1)
+		DebugPrint("Call: Copying Edges of %d to %d\n", src+1, target+1)
+		if (is_v_deleted[src] || is_v_deleted[target]) {
+			WarnPrint("ERROR: Operating On a Deleted Vertex\n")
+			return;
+		}
+
+		auto n_refs = adj_lists[src].size();
+		for (auto i = 0; i < n_refs; i++) {
+			auto ref = adj_lists[src][i];
+			this->adj_lists[ref].push_back(target);
+			this->m++;
+		}
+
 		adj_lists[target].insert(adj_lists[target].end(), adj_lists[src].begin(), adj_lists[src].end());
 		this->m += adj_lists[src].size();
 	}
 
 	void RemoveSelfLoops(size_t v) {
-		if (is_v_deleted[v]) return;
-		DebugPrint("Call to RemoveSelfLoops\n")
-        auto s = adj_lists[v].size();
-		if (adj_lists[v].size() == 0) return;
-		DebugPrint("\ton vertex #%d\n", v+1)
-		for(int i = 0; i < s; i++) {
-			DebugPrint("\t Looking at #%d ...", adj_lists[v][i]+1)
-			if (adj_lists[v][i] == v) {
-                adj_lists[v].erase(adj_lists[v].begin() + i);
-				this->m--;
-			}
-			DebugPrint(" Not found :(\n")
+		DebugPrint("Call: RemoveSelfLoops\n")
+		if (is_v_deleted[v]) {
+			WarnPrint("ERROR: Operating On a Deleted Vertex\n")
+			return;
 		}
+        auto old_size = adj_lists[v].size();
+
+		if (adj_lists[v].size() == 0) {
+			WarnPrint("ERROR: Operating On a Disconnected\n")
+			return;
+		}
+		adj_lists[v].erase(std::remove(adj_lists[v].begin(), adj_lists[v].end(), v), adj_lists[v].end());
+		auto diff = old_size - adj_lists[v].size();
+		this-> m -= diff;
 	}
 	
 	void RemoveVertex(size_t i) {
-		if (is_v_deleted[i]) return;
-		DebugPrint("\t Removing Vertex %d\n", i+1)
+		DebugPrint("Call: Removing Vertex %d\n", i+1)
+		if (is_v_deleted[i]) {
+			WarnPrint("ERROR: Attempting To Deleted a Deleted Vertex\n")
+			return;
+		}
 		size_t s = adj_lists[i].size();
 
 		// remove references to the removed vertex from other lists.
@@ -164,62 +185,59 @@ class UGraph
 			adj_lists[ref].erase(std::remove(adj_lists[ref].begin(), adj_lists[ref].end(), i), adj_lists[ref].end());
 		}
 
-
 		// set of edges where s is source.
 		// set of edges where s is target.
-		if (this->directed) {
-			// @todo
-		} else {
-			this->m -= s;
-		}
+		this->m -= s;
 		adj_lists[i] = std::vector<size_t>(0);
 		is_v_deleted[i] = true;
 		this->n--;
 		this->m -= s;
 	}
 	
-	/* Operations on a UGraph */
-
 	static void Contract(UGraph* g, size_t i, size_t j) {
-		if (g->directed)return;
-		if (i == j) return;
-		if (g->is_v_deleted[i] || g->is_v_deleted[j]) return;
-		if (g->n_vertices() <= i || g->n_vertices() <= j) { return;}
+		DebugPrint("Call: Contract (remainder: %d, removed: %d)\n", i+1, j+1)
+		if (i == j) {
+			WarnPrint("ERROR: Same Vertex\n")
+			return;
+		}
+		if (g->is_v_deleted[i] || g->is_v_deleted[j]) {
+			WarnPrint("ERROR: Contracting on a Deleted Vertex\n")
+			return;
+		}
 
-		DebugPrint("\t Contracting on Edge (%d, %d) (current edges#: %d)\n", i+1, j+1, g->n_edges())
+		DebugPrint("\t Contracting on Edge (%d, %d) (current edges: %d)\n", i+1, j+1, g->n_edges())
 
 		g->CopyEdges(j,i);
-		g->RenameEdges(i,j); 
+		//g->RenameEdges(i,j); 
 		g->RemoveSelfLoops(i); 
 		g->RemoveVertex(j);
 	}
 
-	// This function copies internally g, (@todo then deletes it).
-	// and is not an in_place function, @see KargerMinCut_inplace
-	// it writes back the size of minimum cut in the the p_cuts var. 
 	static void KargerMinCut(UGraph* g, size_t* p_cuts) {
 		DebugPrint("Call: KargerMinCut\n")
 
-		UGraph _graph = new UGraph(g); // @note this is used as a keyword here, not the operator new.
+		UGraph _graph = UGraph(g);
 		size_t v0, v1; // holds the values of the randomly selected edge (v0, v1)
-		size_t j=0, c, x;
-		DebugPrint("  m  |  n  |  r  |  j  |  x  |  c  |  v0  |  v1  |\n")
-		DebugPrint("--------------------------------------------------\n")
-		while (_graph.n_vertices() > 2) {
-			size_t r = rand() % g->n_edges();
-			c = r;
-			x = _graph.adj_lists[j].size();
-			while (c >= x) {				
-				c -= x; 
-				j++;
-				x = _graph.adj_lists[j].size();
-			}
-			v0 = _graph.adj_lists[j][c];
-			v1 = j;
-			DebugPrint("%5d|%5d|%5d|%5d|%5d|%5d|%5d|%5d\n", g->n_edges(), g->n_vertices(), r, j, x, c, v0+1, v1+1)
+		size_t i, j, x;
 
-			Contract(&_graph, v0, v1);
+		while (_graph.n_vertices() > 2) {
+			size_t r = rand() % _graph.n_edges();
+
+			i = 0; // Adj Row Index
+			j = r; // Adj Column Index
+			x = _graph.adj_lists[i].size();
+
+			while (j >= x) {	
+				i++;	// point to the next row		
+				j -= x; // decrement the column counter
+				x = _graph.adj_lists[i].size(); // fetch new size of row
+			}
+			v0 = _graph.adj_lists[i][j];
+			v1 = i;
+
+			Contract(&_graph, v1, v0);
 		}
+
 		size_t t = _graph.n_edges();
 		memcpy(p_cuts, &t , sizeof(size_t));
 	}

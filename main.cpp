@@ -5,7 +5,7 @@
 #include "ugraph.cpp"
 
 
-void ParseFileToAdjacency(const bool directed, const std::string filename) {
+UGraph ParseFileToAdjacency(const bool directed, const std::string filename) {
     FILE* pFile = NULL;
     char* line = NULL;
     char* c_buff = NULL;
@@ -19,7 +19,7 @@ void ParseFileToAdjacency(const bool directed, const std::string filename) {
     std::vector<size_t> t_list;
 
     pFile = fopen(filename.c_str(), "r");
-    if (pFile == NULL) { return; }
+    if (pFile == NULL) { return UGraph(); }
 
     std::cout << " > reading file: " << filename << "...\n";
 
@@ -51,40 +51,9 @@ void ParseFileToAdjacency(const bool directed, const std::string filename) {
         no_lines ++;
     }
 
-    UGraph g = UGraph(false, adj_lists);
-    g.to_s();
-
-    g.RemoveVertex(2);
-    g.to_s();
-
-
-    g.RemoveVertex(2);
-    g.to_s();
-
-    g.RemoveVertex(3);
-    g.to_s();
-    
-    g.RemoveVertex(1);
-    g.to_s();
-
-    g.RemoveVertex(0);
-    g.to_s();
-
-    UGraph::Contract(&g, (size_t)1, (size_t)0);
-    g.to_s();
-    
-    UGraph::Contract(&g, (size_t)1, (size_t)0);
-    g.to_s();
-
-    char _tft_ = getchar();
-
-    size_t x;
-    /*
-    for (auto l = 0; l < 15; l++) {
-        g.KargerMinCut(&g, &x);
-        std::cout << "Minimum cut size of graph is: " << x << "\n";
-    }
-    */
+    std::cout << "Read " << no_lines << "\n";
+    UGraph g = UGraph(adj_lists);
+    return g;
 }
 
 
@@ -95,6 +64,24 @@ int main() {
     std::cout << "-> Filename: ";
     std::cin >> filename;
 
-    ParseFileToAdjacency(false, filename);
+    auto x = ParseFileToAdjacency(false, filename);
+
+    size_t min_cut = 0;
+    std::vector<size_t> vec = std::vector<size_t>(1500);
+
+    for (int i = 0 ; i < 1500 ; i++) {
+        UGraph::KargerMinCut(&x, &min_cut);
+        vec[i] = min_cut;
+    }
+
+    size_t min = vec[0];
+
+    for (int i = 0 ; i < 1500 ; i++) {
+        std::cout << vec[i] << " \n";
+        if (vec[i] < min) {
+            min = vec[i];
+        }
+    }
+    std::cout << " The minimum of a 100 is: "<< min << "\n";
     return 0;
 }
