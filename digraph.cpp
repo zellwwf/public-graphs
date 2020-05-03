@@ -13,13 +13,15 @@
 
 #include <cstdlib>
 #include <vector>
+#include <iostream>
 #include <algorithm> 
-#include "utils.cpp"
+#include <string>
+
 #define DEBUG_MODE 0
 #define DebugPrint(str ...) if(DEBUG_MODE) printf(str);
 #define WarnPrint(str ...) printf(str);
 
-class UGraph 
+class Digraph 
 {
 	private:
 
@@ -32,18 +34,18 @@ class UGraph
 	public:
 
 	size_t n_vertices() {return n;}
-	size_t n_edges() {return (m/2);}
+	size_t n_edges() {return m;}
 	size_t get_m() {return m;}
 
 	/* Constructors */
-	UGraph() {
+	Digraph() {
 		this->n = 0;
 		this->m = 0;
 		// @todo add the pointers / arrays... they will be problematic.
 	}
 	
 	// Copy Constructor
-	UGraph(UGraph *pGraph) {
+	Digraph(Digraph *pGraph) {
 		this->n = pGraph->n;
 		this->m = pGraph->m;
 		// @todo probably a bug: is this copying or is it moving pointers?
@@ -52,8 +54,8 @@ class UGraph
 	}
 
 	// Adjacency List Constructor
-	UGraph(const std::vector<std::vector<size_t>> adj_lists) {
-		DebugPrint("Call: UGraph Adj. List Constructor\n")
+	Digraph(const std::vector<std::vector<size_t>> adj_lists) {
+		DebugPrint("Call: Digraph Adj. List Constructor\n")
 		size_t _m = 0;
 		size_t _n = adj_lists.size();
 
@@ -194,7 +196,7 @@ class UGraph
 		this->m -= s;
 	}
 	
-	static void Contract(UGraph* g, size_t i, size_t j) {
+	static void Contract(Digraph* g, size_t i, size_t j) {
 		DebugPrint("Call: Contract (remainder: %d, removed: %d)\n", i+1, j+1)
 		if (i == j) {
 			WarnPrint("ERROR: Same Vertex\n")
@@ -208,15 +210,14 @@ class UGraph
 		DebugPrint("\t Contracting on Edge (%d, %d) (current edges: %d)\n", i+1, j+1, g->n_edges())
 
 		g->CopyEdges(j,i);
-		//g->RenameEdges(i,j); 
 		g->RemoveSelfLoops(i); 
 		g->RemoveVertex(j);
 	}
 
-	static void KargerMinCut(UGraph* g, size_t* p_cuts) {
+	static void KargerMinCut(Digraph* g, size_t* p_cuts) {
 		DebugPrint("Call: KargerMinCut\n")
 
-		UGraph _graph = UGraph(g);
+		Digraph _graph = Digraph(g);
 		size_t v0, v1; // holds the values of the randomly selected edge (v0, v1)
 		size_t i, j, x;
 
@@ -242,55 +243,119 @@ class UGraph
 		memcpy(p_cuts, &t , sizeof(size_t));
 	}
 
-	static UGraph ParseFileToAdjacency(const std::string filename) {
-    FILE* pFile = NULL;
-    char* line = NULL;
-    char* c_buff = NULL;
-    bool skip_me = true;
-    size_t no_lines = 1;
-    size_t line_len = 0;
-    size_t i = 0;
-    size_t _t;
+	// Dfs Vars
+	std::vector<bool> unexplored;	// Maps vertices into explored or not.
+	std::vector<size_t> visitation_order;
+	size_t visit_iterator;
+	bool is_acyclic;
+	bool dfs_running;
 
-    std::vector<std::vector<size_t>> adj_lists;
-    std::vector<size_t> t_list;
+	static void DFS_Loop(Digraph* g) {
 
-    pFile = fopen(filename.c_str(), "r");
-    if (pFile == NULL) { return UGraph(); }
+	}
 
-    std::cout << " > reading file: " << filename << "...\n";
+	static void StartDFS(Digraph* g, size_t vertex) {
+		WarnPrint("Starting DFS...\n");
+		auto n = g->n_vertices();
+		g->dfs_running = true;
+		g->unexplored = std::vector<bool>(n,true);
+		g->visitation_order = std::vector<size_t>(n,0);
+		g->visit_iterator = n;
+		g->DFS(vertex);
+		g->visitation_order[vertex] = g->visit_iterator;
+		g->visit_iterator--;
+	}
 
-    while (getline(&line, &line_len, pFile) != -1)
-    {
-        skip_me = true;
-        c_buff = strtok(line, " \t");
+	void DFS(size_t vertex) {
+		WarnPrint("DFS on %d\n", vertex);
+		// reserve mem for stack
+		unexplored[vertex] = false;
 
-        if (c_buff == NULL) { 
-            std::cout << " c_buff is empty! file reading issue...\n";
-            // @todo close filestream
-        }
+		size_t n_edges = adj_lists[vertex].size(); // the number of edges of in v.
+		for (auto i = 0; i < n_edges; i++) {
+			auto new_v = adj_lists[vertex][i];
+			// solve this find x such that adj_lists[new_v][x] = vertex;
+			auto nerww_v = adj_lists[i][vertex];
+			if (unexplored[new_v]) { 
+				DFS(new_v);
+				visitation_order[new_v] = visit_iterator;
+				visit_iterator--;
+			}
+		}
+	}
 
-        while (c_buff != NULL) {
-            if (skip_me) 
-            { 
-                skip_me = false;
-            } else {
-                _t = (size_t) atoi(c_buff);
-                if (_t > 0) {
-                    t_list.push_back(_t - 1);
-                }
-            }
-            c_buff = strtok(NULL, "  \t");
-        }
+	void ReverseEdges() {
+		// if adj[x][y] = z --> adj[y][x] = z
+		auto newEdges = std::vector<std::vector<size_t>> (this->adj_lists.size());
 
-        adj_lists.push_back(t_list);
-        t_list.clear();
-        no_lines ++;
-    }
+		// visit each vertex
+		for (auto i = 0; i < adj_lists.size(); i++) {
+			
+			auto n_verts = adj_lists[i].size(); // 2    [1: 2 3]
 
-    std::cout << "Read " << no_lines << "\n";
-    UGraph g = UGraph(adj_lists);
-    return g;
-}
+			// 
+			for (auto j = 0; j < n_verts; j++) {
+				// put the reverse arrow 
+				auto target = adj_lists[i][j];
+				newEdges[target].push_back(i); 
+			}
 
+		}
+
+		this->adj_lists = newEdges;
+	}
+
+	// G[x] --> edges out of x
+	// G[x][y] --> edges out of x of [y] --> vertex
+	// G[y][x] --> 
+	static Digraph ParseFileToAdjacency(const std::string filename) {
+		FILE* pFile = NULL;
+		char* line = NULL;
+		char* c_buff = NULL;
+		bool skip_me = true;
+		size_t no_lines = 1;
+		size_t line_len = 0;
+		size_t i = 0;
+		size_t _t;
+
+		std::vector<std::vector<size_t>> adj_lists;
+		std::vector<size_t> t_list;
+
+		pFile = fopen(filename.c_str(), "r");
+		if (pFile == NULL) { return Digraph(); }
+
+		std::cout << " > reading file: " << filename << "...\n";
+
+		while (getline(&line, &line_len, pFile) != -1)
+		{
+			skip_me = true;
+			c_buff = strtok(line, " \t");
+
+			if (c_buff == NULL) { 
+				std::cout << " c_buff is empty! file reading issue...\n";
+				// @todo close filestream
+			}
+
+			while (c_buff != NULL) {
+				if (skip_me) 
+				{ 
+					skip_me = false;
+				} else {
+					_t = (size_t) atoi(c_buff);
+					if (_t > 0) {
+						t_list.push_back(_t - 1);
+					}
+				}
+				c_buff = strtok(NULL, "  \t");
+			}
+
+			adj_lists.push_back(t_list);
+			t_list.clear();
+			no_lines ++;
+		}
+
+		std::cout << "Read " << no_lines << "\n";
+		Digraph g = Digraph(adj_lists);
+		return g;
+	}
 };
