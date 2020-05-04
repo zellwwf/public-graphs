@@ -18,19 +18,20 @@ int main(int argc, char *argv[]) {
     auto x = Digraph::ParseFileToAdjacency(filename);
 
     Digraph::Kosaraju_SCC(&x);
-    for (auto i = 0; i < x.visitation_order.size(); i++) {
-         std::cout << i << " - " << x.visitation_order[i] << " - "<< x.scc_sets[i] << "\n";
-    }
+    //for (auto i = 0; i < x.visitation_order.size(); i++) {
+    //     std::cout << i << " - " << x.visitation_order[i] << " - "<< x.scc_sets[i] << "\n";
+    //}
 
-    /*
-    std::ofstream MyFile("scc_belongs.txt");
+    
+    std::ofstream MyFile("colorings.txt");
     std::cout << "Writing out to file \n";
+
     for (auto i = 0; i < x.scc_sets.size(); i++) {
          MyFile << x.scc_sets[i] << "\n";
     }
 
     MyFile.close();
-    */
+    std::cout << "Dump Done! Bye \n";
 
     return 0;
 }

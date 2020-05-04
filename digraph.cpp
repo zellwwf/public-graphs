@@ -255,14 +255,17 @@ class Digraph
 	static void Kosaraju_SCC(Digraph* g) {
 		DebugPrint("Call: Kosaraju...\n");
 		g->ReverseEdges();
+		WarnPrint("Going to First DFS Loop")
 		DFS_Loop(g, true);
 		g->ReverseEdges();
+		WarnPrint("Going to 2nd DFS Loop")
 		DFS_Loop(g, false);
 	}
 
 	static void DFS_Loop(Digraph* g, bool initial_pass) {
 		DebugPrint("Call: DFS Loop...\n as pass: %d\n", initial_pass ? 1 : 2);
 		auto n = g->n_vertices();
+		std::vector<size_t> reorder = std::vector<size_t>(n);
 		g->dfs_running = true;
 		g->unexplored = std::vector<bool>(n,true);
 
@@ -274,22 +277,18 @@ class Digraph
 			g->visitation_order = std::vector<size_t>(n,0);
 		}
 
-		// [1, 2, 3, 4]..
-		// [7, 1, 5, 8]..
-		auto lamb = [=] (size_t i) -> size_t
-		{
-			for (auto l = 0; l < g->visitation_order.size() ; l ++) {
-				if (g->visitation_order[l] == i+1) {
-					return l;
-				}
+		if (!initial_pass) {
+			// some O(n) preprocessing to make shit faster
+			for (auto k = 0; k < n; k++) {
+				reorder[g->visitation_order[k]-1] = k; 
 			}
-			return 0;
-		};
+		}
 
 		for (auto i=0; i < n; i++) {
-			// lamb.call(g->visitation_order[i+1])
-			auto vertex = initial_pass ? i : lamb(i);
+			if (i%1000==0) { WarnPrint("looping... %d\n", i)}
+			auto vertex = initial_pass ? i : reorder[i];
 			if (g->unexplored[vertex]) {
+
 				g->scc_current_leader = i+1;
 				g->DFS(vertex, initial_pass);
 
