@@ -249,25 +249,77 @@ class Digraph
 	size_t visit_iterator;
 	bool is_acyclic;
 	bool dfs_running;
+	std::vector<size_t> scc_sets;
+	size_t scc_current_leader;
 
-	static void DFS_Loop(Digraph* g) {
+	static void Kosaraju_SCC(Digraph* g) {
+		DebugPrint("Call: Kosaraju...\n");
+		g->ReverseEdges();
+		DFS_Loop(g, true);
+		g->ReverseEdges();
+		DFS_Loop(g, false);
+	}
 
+	static void DFS_Loop(Digraph* g, bool initial_pass) {
+		DebugPrint("Call: DFS Loop...\n as pass: %d\n", initial_pass ? 1 : 2);
+		auto n = g->n_vertices();
+		g->dfs_running = true;
+		g->unexplored = std::vector<bool>(n,true);
+
+		// if your on the first pass, scc set will store the 'magical' ordering u will need on the reverse graph.
+		g->visit_iterator = n;	// please note that visits and current leader are starting by 1
+		g->scc_current_leader = n;
+		if (initial_pass) {
+			g->scc_sets = std::vector<size_t>(n,0);
+			g->visitation_order = std::vector<size_t>(n,0);
+		}
+
+		// [1, 2, 3, 4]..
+		// [7, 1, 5, 8]..
+		auto lamb = [=] (size_t i) -> size_t
+		{
+			for (auto l = 0; l < g->visitation_order.size() ; l ++) {
+				if (g->visitation_order[l] == i+1) {
+					return l;
+				}
+			}
+			return 0;
+		};
+
+		for (auto i=0; i < n; i++) {
+			// lamb.call(g->visitation_order[i+1])
+			auto vertex = initial_pass ? i : lamb(i);
+			if (g->unexplored[vertex]) {
+				g->scc_current_leader = i+1;
+				g->DFS(vertex, initial_pass);
+
+				if (initial_pass) {
+					g->visitation_order[vertex] = g->visit_iterator;
+					g->visit_iterator--;
+				}
+			}
+		}
+
+		if (!initial_pass) {
+			g->dfs_running = false;
+		}
 	}
 
 	static void StartDFS(Digraph* g, size_t vertex) {
-		WarnPrint("Starting DFS...\n");
+		DebugPrint("Call: DFS Start...\n");
 		auto n = g->n_vertices();
 		g->dfs_running = true;
 		g->unexplored = std::vector<bool>(n,true);
 		g->visitation_order = std::vector<size_t>(n,0);
 		g->visit_iterator = n;
-		g->DFS(vertex);
+		g->DFS(vertex, true);
 		g->visitation_order[vertex] = g->visit_iterator;
 		g->visit_iterator--;
 	}
 
-	void DFS(size_t vertex) {
-		WarnPrint("DFS on %d\n", vertex);
+	void DFS(size_t vertex, bool initial_pass) {
+		DebugPrint("DFS on %d\n", vertex)
+		scc_sets[vertex] = scc_current_leader;	// coloring strongly connected components with the same color.
 		// reserve mem for stack
 		unexplored[vertex] = false;
 
@@ -275,11 +327,12 @@ class Digraph
 		for (auto i = 0; i < n_edges; i++) {
 			auto new_v = adj_lists[vertex][i];
 			// solve this find x such that adj_lists[new_v][x] = vertex;
-			auto nerww_v = adj_lists[i][vertex];
 			if (unexplored[new_v]) { 
-				DFS(new_v);
-				visitation_order[new_v] = visit_iterator;
-				visit_iterator--;
+				DFS(new_v, initial_pass);
+				if (initial_pass) {
+					visitation_order[new_v] = visit_iterator;
+					visit_iterator--;
+				}
 			}
 		}
 	}
@@ -288,18 +341,16 @@ class Digraph
 		// if adj[x][y] = z --> adj[y][x] = z
 		auto newEdges = std::vector<std::vector<size_t>> (this->adj_lists.size());
 
-		// visit each vertex
+		// visit each vertex and find its outgoing edges.
 		for (auto i = 0; i < adj_lists.size(); i++) {
 			
-			auto n_verts = adj_lists[i].size(); // 2    [1: 2 3]
+			auto n_edges = adj_lists[i].size(); // number of outgoing edges.
 
-			// 
-			for (auto j = 0; j < n_verts; j++) {
-				// put the reverse arrow 
+			for (auto j = 0; j < n_edges; j++) {
+				// put the reverse arrow
 				auto target = adj_lists[i][j];
 				newEdges[target].push_back(i); 
 			}
-
 		}
 
 		this->adj_lists = newEdges;

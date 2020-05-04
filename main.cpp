@@ -1,27 +1,36 @@
 #include <iostream>
 #include <vector>
+#include <fstream>
 #include <string.h>
 
 #include "digraph.cpp"
 
+void getcommand() {
+}
+
 int main(int argc, char *argv[]) {
     std::string filename; 
 
-    std::cout << "ShitTY Graph ProgrAm! \n";
+    std::cout << "Shitty Graph Program! \n";
     std::cout << "-> Filename: ";
     std::cin >> filename;
 
     auto x = Digraph::ParseFileToAdjacency(filename);
-    x.to_s();
-    x.ReverseEdges();
-    x.to_s();
-    x.ReverseEdges();
-    x.to_s();
-    Digraph::StartDFS(&x, 3);
 
+    Digraph::Kosaraju_SCC(&x);
     for (auto i = 0; i < x.visitation_order.size(); i++) {
-        std::cout << i + 1 << " --> " << x.visitation_order[i] << "\n";
+         std::cout << i << " - " << x.visitation_order[i] << " - "<< x.scc_sets[i] << "\n";
     }
+
+    /*
+    std::ofstream MyFile("scc_belongs.txt");
+    std::cout << "Writing out to file \n";
+    for (auto i = 0; i < x.scc_sets.size(); i++) {
+         MyFile << x.scc_sets[i] << "\n";
+    }
+
+    MyFile.close();
+    */
 
     return 0;
 }
