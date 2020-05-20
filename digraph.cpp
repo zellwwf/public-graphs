@@ -3,6 +3,8 @@
 #include <iostream>
 #include <algorithm> 
 #include <string.h>
+#include <queue>
+#include <numeric> // USED ONLY FOR IOTA! in Dijsktra
 
 #define DEBUG
 #define VERBOSITY 2 // 0, 1, 2 -- (errors, <-- + warns, <-- + info )
@@ -24,8 +26,9 @@ class Digraph
 	size_t m;	// |E|
 
     std::vector<std::vector<size_t>> adj_lists;
+	std::vector<std::vector<size_t>> weights;
+
 	std::vector<bool> is_v_deleted;
-	std::vector<size_t> weights;
 
 	public:
 
@@ -71,7 +74,7 @@ class Digraph
 	
 	/* Displayers */
 
-	//in honor of ruby
+	// in honor of ruby
 	void to_s() {
 		//   0: 1 2 3 
 		size_t nvertices = adj_lists.size();
@@ -94,17 +97,16 @@ class Digraph
 		}
 	}
 
-
-
 	/* Operations */
 
-	void SetEdgeWeights(std::vector<size_t> new_weights) {
+	void SetEdgeWeights(std::vector<std::vector<size_t>> new_weights) {
 		if (new_weights.size() == get_m()) {
 			this->weights = new_weights;
 		} else {
 			WarnPrint("You passed an array of size: %d and we have %d edges only!", new_weights.size(), get_m());
 		}
 	}
+
     // This moves the edges from a removee and places them to a replacee
 	// @todo check if works for Ugraph and Dgraph
 	//
@@ -268,6 +270,7 @@ class Digraph
 	bool dfs_running;
 	std::vector<size_t> scc_sets;
 	size_t scc_current_leader;
+	std::vector<size_t> shorted_path_weights;
 
 	static void Kosaraju_SCC(Digraph* g) {
 		DebugPrint("Call: Kosaraju...\n");
@@ -398,18 +401,76 @@ class Digraph
 		this->adj_lists = new_edges;
 	}
 
-	void DijkstrasShortestPath(size_t v0) {
-		std::vector<size_t> new_ordering = std::vector<size_t>(n);
-		std::vector<size_t> subtree_vertices = std::vector<size_t>();
-		std::vector<size_t> w_shorted_path = std::vector<size_t>(n);
+	/*
 
-		// initialize
-		new_ordering[0] = v0;
-		subtree_vertices.push_back(v0);
-		w_shorted_path[0] = 0;
+	*/
+    void DijkstrasShortestPath(size_t v0) {
+		DebugPrint("DijkstrasShortestPath on %d\n", v0);
 
-		while (subtree_vertices.size() == n) {
+		// Define: vector of shorted_paths_vals, initialized to infinity (or flip all bits to 1s)
+		size_t infinity = std::numeric_limits<size_t>::max();
+		std::vector<size_t> shortest_paths_vals = std::vector<size_t>(n, infinity);
 
+		// Define: the Abyss (Where sp is not defined, infinite)
+		std::vector<size_t> abyss = std::vector<size_t>(n-1);
+		size_t start = 1;
+		std::iota(abyss.begin(), abyss.end(), start);
+
+		// Define: Dijsktra's Subtree
+		std::vector<size_t> subtree = std::vector<size_t>();
+		subtree.reserve(n);
+
+		shortest_paths_vals[v0] = 0;
+		subtree.push_back(v0);
+
+		size_t vp;	// the vertex we came from, the parent.
+		size_t v = v0;
+		size_t c_n_edges, c=0;
+		std::vector<size_t> c_outgoing;
+		std::vector<size_t> c_weights;
+		//std::priority_queue <size_t, std::vector<size_t>, std::greater<size_t>> c_weights;
+	
+		size_t lowest_weight, v_dest, v_greedy;
+		bool c_i_in_abyss;
+
+		// WARNING this loop assumes that v0 is connected to each (other) vertex. 
+		while (subtree.size() != n) {
+			c_outgoing = adj_lists[v];
+			c_n_edges = c_outgoing.size();
+			c_weights.clear();
+			c_weights.reserve(c_n_edges);
+
+			for (auto i = 0; i < c_n_edges; i++) {
+				// pick the one with the lowest weight.
+				v_dest = adj_lists[v][i];
+
+				// Go through the outgoing edges. Note that getting the 'crossing' set of edges
+				// (def as: { (x,y) | x in subtree, y in abyss }) is not θ(1).
+				// @review: I think if work on finding the crossing set of edges i can make it 
+				// faster, without priority queue even? I think i can make it θ(log(n)) if we sort adj list.
+
+				// STD::find assumes UNSORTED (thus fucking slower linear search)
+				c_i_in_abyss = std::find(abyss.begin(), abyss.end(),v_dest) != abyss.end();
+
+				// if (v, v_dest) is a crossing edge, place it in the heap.
+				if (c_i_in_abyss) { 
+					shortest_paths_vals[v_dest] = shortest_paths_vals[v] + weights[v][v_dest];
+					c_weights[i] = shortest_paths_vals[v_dest];
+					//c_weights.push(shorted_paths_vals[v_dest]); 
+				} // else just skip the rest of the loop and check the next outgoing edge.
+			}
+			lowest_weight = infinity;
+			for (int j = 0; j < c_n_edges; j++) {
+				if (lowest_weight > c_weights[j]) {
+					lowest_weight = c_weights[j];
+				}
+			}
+			v_greedy = std::find(c_weights.begin(), c_weights.end(),lowest_weight) != c_weights.end();
+
+			// Apply the greedy logic and follow the lowest path:
+			vp = v;
+			v = v_greedy; //wrong this should be the v with the shortest_path
+			subtree.push_back(v);
 		}
 
 	}
