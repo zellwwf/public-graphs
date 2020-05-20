@@ -1,4 +1,3 @@
-
 puts "hi!"
 puts "what file do you want to transform from edge to adjlist style?"
 x = gets.chomp

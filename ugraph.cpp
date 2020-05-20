@@ -13,8 +13,10 @@
 
 #include <cstdlib>
 #include <vector>
+#include <iostream>
 #include <algorithm> 
-#include "utils.cpp"
+#include <string.h>
+
 #define DEBUG_MODE 0
 #define DebugPrint(str ...) if(DEBUG_MODE) printf(str);
 #define WarnPrint(str ...) printf(str);

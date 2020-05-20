@@ -1,35 +1,31 @@
-// April 18 - 12:13 PM -- Start on notes
-// 			  12:45 PM -- Code
-// 	          1:45  PM -- Break -- restart pc 
-//            3:12  PM -- fucking i lost the file shits...
-//            5:45  PM -- Break..
-
-// April 19 - 1:30  PM -- Starting again
-
-// April 21 - 10:27 AM -- Make it compile i hope.
-//          - 11:46 AM -- Compiles! -- break
-// After some depression... On April 29 we managed to read file and do some calcs!
-// still a long way to go.
-
 #include <cstdlib>
 #include <vector>
 #include <iostream>
 #include <algorithm> 
-#include <string>
+#include <string.h>
 
-#define DEBUG_MODE 0
-#define DebugPrint(str ...) if(DEBUG_MODE) printf(str);
-#define WarnPrint(str ...) printf(str);
+#define DEBUG
+#define VERBOSITY 2 // 0, 1, 2 -- (errors, <-- + warns, <-- + info )
 
-class Digraph 
+#ifdef DEBUG
+#define DebugPrint(str ...) printf(str)
+#else
+#define DebugPrint(str ...) do { } while(0)
+#endif
+#define InfoPrint(str ...) if(VERBOSITY > 1) printf(str)
+#define WarnPrint(str ...) if(VERBOSITY > 0) printf(str)
+#define ErrorPrint(str ...) printf(str);
+
+class Digraph
 {
 	private:
 
-	size_t n;
-	size_t m;
+	size_t n;	// |V|
+	size_t m;	// |E|
 
     std::vector<std::vector<size_t>> adj_lists;
 	std::vector<bool> is_v_deleted;
+	std::vector<size_t> weights;
 
 	public:
 
@@ -53,9 +49,11 @@ class Digraph
 		this->is_v_deleted = pGraph->is_v_deleted;
 	}
 
+	// Assignment Constructor Intentionally Left Blank (Why? wats the default behavior?)
+
 	// Adjacency List Constructor
 	Digraph(const std::vector<std::vector<size_t>> adj_lists) {
-		DebugPrint("Call: Digraph Adj. List Constructor\n")
+		DebugPrint("Call: Digraph Adj. List Constructor\n");
 		size_t _m = 0;
 		size_t _n = adj_lists.size();
 
@@ -68,7 +66,7 @@ class Digraph
 		this->m = _m;
 		this->adj_lists = adj_lists; 
 	}
-
+	
 	/* Desctructors */
 	
 	/* Displayers */
@@ -96,20 +94,29 @@ class Digraph
 		}
 	}
 
+
+
 	/* Operations */
 
+	void SetEdgeWeights(std::vector<size_t> new_weights) {
+		if (new_weights.size() == get_m()) {
+			this->weights = new_weights;
+		} else {
+			WarnPrint("You passed an array of size: %d and we have %d edges only!", new_weights.size(), get_m());
+		}
+	}
     // This moves the edges from a removee and places them to a replacee
 	// @todo check if works for Ugraph and Dgraph
 	//
 	// Assert that if e is an edge in removee --> e is an edge in replacee
 	void RenameEdges(const size_t replacee, size_t removee) {
-		DebugPrint("Call: RenameEdges\n\tsource: %d - target: %d\n", removee+1, replacee+1)
+		DebugPrint("Call: RenameEdges\n\tsource: %d - target: %d\n", removee+1, replacee+1);
 		if (removee == replacee) {
-			WarnPrint("ERROR: Same Vertex\n")
+			WarnPrint("ERROR: Same Vertex\n");
 			return;
 			}
 		if (is_v_deleted[removee] || is_v_deleted[replacee]) {
-			WarnPrint("ERROR: Operating On a Deleted Vertex\n")
+			WarnPrint("ERROR: Operating On a Deleted Vertex\n");
 			return;
 		}
 
@@ -125,9 +132,9 @@ class Digraph
 
 	// Adds a single edge between two vertices.
 	void AddEdge(size_t i, size_t j) {
-		DebugPrint("Adding Edge (%d, %d)\n", i+1, j+1)
+		DebugPrint("Adding Edge (%d, %d)\n", i+1, j+1);
 		if (is_v_deleted[i] || is_v_deleted[j]) {
-			WarnPrint("ERROR: Operating On a Deleted Vertex\n")
+			WarnPrint("ERROR: Operating On a Deleted Vertex\n");
 			return;
 		}
 
@@ -137,17 +144,23 @@ class Digraph
 		this->m++;
 	}
 
+	/*
+	@deprecated
+	*/
 	void CopyEdges(size_t src, size_t target) {
-		DebugPrint("Call: Copying Edges of %d to %d\n", src+1, target+1)
+		DebugPrint("Call: Copying Edges of %d to %d\n", src+1, target+1);
 		if (is_v_deleted[src] || is_v_deleted[target]) {
-			WarnPrint("ERROR: Operating On a Deleted Vertex\n")
+			WarnPrint("ERROR: Operating On a Deleted Vertex\n");
 			return;
 		}
 
+		// this block is responsible for making sure the set of edges out of a source, will be copied to target
+		// currently its broken for digraphs since it reverse the direction
 		auto n_refs = adj_lists[src].size();
 		for (auto i = 0; i < n_refs; i++) {
 			auto ref = adj_lists[src][i];
-			this->adj_lists[ref].push_back(target);
+			this->adj_lists[target].push_back(ref);
+			this->adj_lists[ref].push_back(target); // this makes this method not workj for digraphs @todo @deprecated
 			this->m++;
 		}
 
@@ -156,15 +169,15 @@ class Digraph
 	}
 
 	void RemoveSelfLoops(size_t v) {
-		DebugPrint("Call: RemoveSelfLoops\n")
+		DebugPrint("Call: RemoveSelfLoops\n");
 		if (is_v_deleted[v]) {
-			WarnPrint("ERROR: Operating On a Deleted Vertex\n")
+			WarnPrint("ERROR: Operating On a Deleted Vertex\n");
 			return;
 		}
         auto old_size = adj_lists[v].size();
 
 		if (adj_lists[v].size() == 0) {
-			WarnPrint("ERROR: Operating On a Disconnected\n")
+			WarnPrint("ERROR: Operating On a Disconnected\n");
 			return;
 		}
 		adj_lists[v].erase(std::remove(adj_lists[v].begin(), adj_lists[v].end(), v), adj_lists[v].end());
@@ -172,42 +185,46 @@ class Digraph
 		this-> m -= diff;
 	}
 	
+	// @deprecated -- needs rework on digraphs
 	void RemoveVertex(size_t i) {
-		DebugPrint("Call: Removing Vertex %d\n", i+1)
+		DebugPrint("Call: Removing Vertex %d\n", i+1);
 		if (is_v_deleted[i]) {
-			WarnPrint("ERROR: Attempting To Deleted a Deleted Vertex\n")
 			return;
 		}
-		size_t s = adj_lists[i].size();
+		size_t n_out_degree = adj_lists[i].size();
 
 		// remove references to the removed vertex from other lists.
-		// in effect this deletes edges
-		for (int x = 0; x < s; x++) {
+		// in effect this deletes edges of the vertex i before deleting it.
+		// Erase (Remove) line t == n_edges_of_i
+		// For loops with the erase_remove line is going to be linear in n of edges, t(m)
+		// the loop iterates exactly in_degree of (i) times.
+		for (int x = 0; x < n_out_degree; x++) {
 			auto ref = adj_lists[i][x];
 			adj_lists[ref].erase(std::remove(adj_lists[ref].begin(), adj_lists[ref].end(), i), adj_lists[ref].end());
 		}
 
 		// set of edges where s is source.
 		// set of edges where s is target.
-		this->m -= s;
-		adj_lists[i] = std::vector<size_t>(0);
+		this->m -= n_out_degree;
+		adj_lists[i] = std::vector<size_t>(0);	// this is to perseve the ordering (indexing) of adj_lists, for now.
 		is_v_deleted[i] = true;
 		this->n--;
-		this->m -= s;
+		this->m -= n_out_degree;
 	}
 	
+	// @deprecated -- needs rework on digraphs
 	static void Contract(Digraph* g, size_t i, size_t j) {
-		DebugPrint("Call: Contract (remainder: %d, removed: %d)\n", i+1, j+1)
+		DebugPrint("Call: Contract (remainder: %d, removed: %d)\n", i+1, j+1);
 		if (i == j) {
-			WarnPrint("ERROR: Same Vertex\n")
+			WarnPrint("ERROR: Same Vertex\n");
 			return;
 		}
 		if (g->is_v_deleted[i] || g->is_v_deleted[j]) {
-			WarnPrint("ERROR: Contracting on a Deleted Vertex\n")
+			WarnPrint("ERROR: Contracting on a Deleted Vertex\n");
 			return;
 		}
 
-		DebugPrint("\t Contracting on Edge (%d, %d) (current edges: %d)\n", i+1, j+1, g->n_edges())
+		DebugPrint("\t Contracting on Edge (%d, %d) (current edges: %d)\n", i+1, j+1, g->n_edges());
 
 		g->CopyEdges(j,i);
 		g->RemoveSelfLoops(i); 
@@ -215,7 +232,7 @@ class Digraph
 	}
 
 	static void KargerMinCut(Digraph* g, size_t* p_cuts) {
-		DebugPrint("Call: KargerMinCut\n")
+		DebugPrint("Call: KargerMinCut\n");
 
 		Digraph _graph = Digraph(g);
 		size_t v0, v1; // holds the values of the randomly selected edge (v0, v1)
@@ -255,13 +272,16 @@ class Digraph
 	static void Kosaraju_SCC(Digraph* g) {
 		DebugPrint("Call: Kosaraju...\n");
 		g->ReverseEdges();
-		WarnPrint("Going to First DFS Loop")
+		InfoPrint("Going to First DFS Loop");
 		DFS_Loop(g, true);
 		g->ReverseEdges();
-		WarnPrint("Going to 2nd DFS Loop")
+		InfoPrint("Going to 2nd DFS Loop");
 		DFS_Loop(g, false);
 	}
 
+	/*
+	
+	*/
 	static void DFS_Loop(Digraph* g, bool initial_pass) {
 		DebugPrint("Call: DFS Loop...\n as pass: %d\n", initial_pass ? 1 : 2);
 		auto n = g->n_vertices();
@@ -285,7 +305,6 @@ class Digraph
 		}
 
 		for (auto i=0; i < n; i++) {
-			if (i%1000==0) { WarnPrint("looping... %d\n", i)}
 			auto vertex = initial_pass ? i : reorder[i];
 			if (g->unexplored[vertex]) {
 
@@ -316,8 +335,18 @@ class Digraph
 		g->visit_iterator--;
 	}
 
+	/*
+	DFS
+	---
+
+	T: 			
+	S_max: 		ω(2*(n+m)) 
+	
+	n : colorings + explorings
+				coloring + explorings + visitation ordering
+	*/
 	void DFS(size_t vertex, bool initial_pass) {
-		DebugPrint("DFS on %d\n", vertex)
+		DebugPrint("DFS on %d\n", vertex);
 		scc_sets[vertex] = scc_current_leader;	// coloring strongly connected components with the same color.
 		// reserve mem for stack
 		unexplored[vertex] = false;
@@ -325,7 +354,7 @@ class Digraph
 		size_t n_edges = adj_lists[vertex].size(); // the number of edges of in v.
 		for (auto i = 0; i < n_edges; i++) {
 			auto new_v = adj_lists[vertex][i];
-			// solve this find x such that adj_lists[new_v][x] = vertex;
+			// solve this: find x such that adj_lists[new_v][x] = vertex;
 			if (unexplored[new_v]) { 
 				DFS(new_v, initial_pass);
 				if (initial_pass) {
@@ -336,67 +365,93 @@ class Digraph
 		}
 	}
 
-	void ReverseEdges() {
-		// if adj[x][y] = z --> adj[y][x] = z
-		auto newEdges = std::vector<std::vector<size_t>> (this->adj_lists.size());
+	/*
+	Reverses The Edges of the Graph
+	-------------------------------
+	Applies this rule on the adj list array: if adj[x][y] = z --> adj[y][x] = z
+	
+	visit each vertex (1st loop) and find its outgoing edges. Then iterate over the found arrows
+	(2nd for loop) and reverse their direction.
 
-		// visit each vertex and find its outgoing edges.
-		for (auto i = 0; i < adj_lists.size(); i++) {
-			
-			auto n_edges = adj_lists[i].size(); // number of outgoing edges.
+	T: 			θ(m)
+	S:			θ(n+m)
+	S_max: 		ω(2*(n+m)) 
+
+	we can also do the reversing in place, but due to the adjacency list construction, we will increase time complextiy
+	in favor or memory. 
+	*/
+	void ReverseEdges() {
+		auto n_vertices = this->adj_lists.size();
+		auto new_edges = std::vector<std::vector<size_t>> (n_vertices);
+		size_t n_edges = 0;
+
+		for (auto i = 0; i < n_vertices; i++) {
+
+			n_edges = adj_lists[i].size();
 
 			for (auto j = 0; j < n_edges; j++) {
-				// put the reverse arrow
 				auto target = adj_lists[i][j];
-				newEdges[target].push_back(i); 
+				new_edges[target].push_back(i); 
 			}
 		}
 
-		this->adj_lists = newEdges;
+		this->adj_lists = new_edges;
 	}
 
-	// G[x] --> edges out of x
-	// G[x][y] --> edges out of x of [y] --> vertex
-	// G[y][x] --> 
+	void DijkstrasShortestPath(size_t v0) {
+		std::vector<size_t> new_ordering = std::vector<size_t>(n);
+		std::vector<size_t> subtree_vertices = std::vector<size_t>();
+		std::vector<size_t> w_shorted_path = std::vector<size_t>(n);
+
+		// initialize
+		new_ordering[0] = v0;
+		subtree_vertices.push_back(v0);
+		w_shorted_path[0] = 0;
+
+		while (subtree_vertices.size() == n) {
+
+		}
+
+	}
+	/*
+
+	*/
 	static Digraph ParseFileToAdjacency(const std::string filename) {
-		FILE* pFile = NULL;
-		char* line = NULL;
-		char* c_buff = NULL;
-		bool skip_me = true;
+		bool skip_first_entry = true;
 		size_t no_lines = 1;
 		size_t line_len = 0;
 		size_t i = 0;
 		size_t _t;
-
+		FILE* pFile = NULL;
+		char* line = NULL;
+		char* input_char_buffer = NULL;
 		std::vector<std::vector<size_t>> adj_lists;
 		std::vector<size_t> t_list;
 
 		pFile = fopen(filename.c_str(), "r");
 		if (pFile == NULL) { return Digraph(); }
 
-		std::cout << " > reading file: " << filename << "...\n";
+		printf("* reading file: %s\n");
 
 		while (getline(&line, &line_len, pFile) != -1)
 		{
-			skip_me = true;
-			c_buff = strtok(line, " \t");
+			skip_first_entry = true;
+			input_char_buffer = strtok(line, " \t");
 
-			if (c_buff == NULL) { 
-				std::cout << " c_buff is empty! file reading issue...\n";
-				// @todo close filestream
+			if (input_char_buffer == NULL) { 
+				std::cout << " input_char_buffer is empty! file reading issue...\n";
+				fclose(pFile);
 			}
 
-			while (c_buff != NULL) {
-				if (skip_me) 
-				{ 
-					skip_me = false;
-				} else {
-					_t = (size_t) atoi(c_buff);
+			while (input_char_buffer != NULL) {
+				if (skip_first_entry) { skip_first_entry = false;} 
+				else {
+					_t = (size_t) atoi(input_char_buffer);
 					if (_t > 0) {
 						t_list.push_back(_t - 1);
 					}
 				}
-				c_buff = strtok(NULL, "  \t");
+				input_char_buffer = strtok(NULL, "  \t");
 			}
 
 			adj_lists.push_back(t_list);

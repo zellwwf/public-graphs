@@ -12,7 +12,6 @@ lines.each do |x|
 end
 
 vals = h.values.sort.reverse
-puts vals
 
 puts 'life is good in ruby... '
 fout = gets.chomp
