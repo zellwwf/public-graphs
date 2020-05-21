@@ -3,7 +3,7 @@
 #include <iostream>
 #include <algorithm> 
 #include <string.h>
-#include <queue>
+#include <map>
 #include <numeric> // USED ONLY FOR IOTA! in Dijsktra
 
 #define DEBUG
@@ -68,6 +68,22 @@ class Digraph
 		this->is_v_deleted = std::vector<bool>(_n, false);
 		this->m = _m;
 		this->adj_lists = adj_lists; 
+	}
+
+	Digraph(const std::vector<std::vector<size_t>> adj_lists, const std::vector<std::vector<size_t>> weights) {
+		DebugPrint("Call: Digraph Adj. List Constructor\n");
+		size_t _m = 0;
+		size_t _n = adj_lists.size();
+
+		for (auto i = 0; i < adj_lists.size(); i ++) {
+			_m += adj_lists[i].size();
+		}
+
+		this->n = _n;
+		this->is_v_deleted = std::vector<bool>(_n, false);
+		this->m = _m;
+		this->adj_lists = adj_lists;
+		this->weights = weights;
 	}
 	
 	/* Desctructors */
@@ -401,10 +417,35 @@ class Digraph
 		this->adj_lists = new_edges;
 	}
 
+
+	/*
+	@return std::vector<size_t> of all the 'destination' / 'adjacent' wathave u vertices.
+	*/
+	std::vector<size_t> GetAdjList_Subgraph(const std::vector<size_t> vertices) {
+		size_t adj_size;
+		std::vector<size_t> c_adj_list;
+		std::vector<size_t> v;	
+		std::map<size_t, bool> map;
+
+		for (auto i=0; i<vertices.size() ; i++) {
+			c_adj_list = adj_lists[vertices[i]];
+			adj_size = c_adj_list.size();
+			for (auto j=0; j< adj_size; j++) {
+				map.insert(std::pair<size_t,bool>(c_adj_list[j], true));
+			}
+		}
+
+		printf("hi");
+		for(std::map<size_t,bool>::iterator it = map.begin(); it != map.end(); ++it) {
+  			v.push_back(it->first);
+		}
+
+		return v;
+	}
 	/*
 
 	*/
-    void DijkstrasShortestPath(size_t v0) {
+    std::vector<size_t> DijkstrasShortestPath(size_t v0) {
 		DebugPrint("DijkstrasShortestPath on %d\n", v0);
 
 		// Define: vector of shorted_paths_vals, initialized to infinity (or flip all bits to 1s)
@@ -412,9 +453,10 @@ class Digraph
 		std::vector<size_t> shortest_paths_vals = std::vector<size_t>(n, infinity);
 
 		// Define: the Abyss (Where sp is not defined, infinite)
-		std::vector<size_t> abyss = std::vector<size_t>(n-1);
-		size_t start = 1;
-		std::iota(abyss.begin(), abyss.end(), start);
+		std::vector<size_t> abyss = std::vector<size_t>(n);
+		size_t start = 0;
+		std::iota(abyss.begin(), abyss.end(), start); // [1,2,3,4,5...n-1]
+		abyss.erase(abyss.begin() + v0); // Thanks for counting from 0 to n.
 
 		// Define: Dijsktra's Subtree
 		std::vector<size_t> subtree = std::vector<size_t>();
@@ -430,19 +472,19 @@ class Digraph
 		std::vector<size_t> c_weights;
 		//std::priority_queue <size_t, std::vector<size_t>, std::greater<size_t>> c_weights;
 	
-		size_t lowest_weight, v_dest, v_greedy;
+		size_t lowest_weight, v_dest, v_greedy, new_s_path, idx_lowest_weight;
 		bool c_i_in_abyss;
 
 		// WARNING this loop assumes that v0 is connected to each (other) vertex. 
 		while (subtree.size() != n) {
-			c_outgoing = adj_lists[v];
+			c_outgoing = GetAdjList_Subgraph(subtree);
 			c_n_edges = c_outgoing.size();
 			c_weights.clear();
 			c_weights.reserve(c_n_edges);
 
 			for (auto i = 0; i < c_n_edges; i++) {
 				// pick the one with the lowest weight.
-				v_dest = adj_lists[v][i];
+				v_dest = c_outgoing[i];
 
 				// Go through the outgoing edges. Note that getting the 'crossing' set of edges
 				// (def as: { (x,y) | x in subtree, y in abyss }) is not θ(1).
@@ -454,25 +496,31 @@ class Digraph
 
 				// if (v, v_dest) is a crossing edge, place it in the heap.
 				if (c_i_in_abyss) { 
-					shortest_paths_vals[v_dest] = shortest_paths_vals[v] + weights[v][v_dest];
+					new_s_path = shortest_paths_vals[v] + weights[v][v_dest];
+					if (shortest_paths_vals[v_dest] > new_s_path) {shortest_paths_vals[v_dest] = new_s_path;}
+					
 					c_weights[i] = shortest_paths_vals[v_dest];
 					//c_weights.push(shorted_paths_vals[v_dest]); 
 				} // else just skip the rest of the loop and check the next outgoing edge.
 			}
 			lowest_weight = infinity;
+			idx_lowest_weight;
 			for (int j = 0; j < c_n_edges; j++) {
 				if (lowest_weight > c_weights[j]) {
 					lowest_weight = c_weights[j];
+					idx_lowest_weight = j;
 				}
 			}
-			v_greedy = std::find(c_weights.begin(), c_weights.end(),lowest_weight) != c_weights.end();
+			v_greedy = idx_lowest_weight;
 
 			// Apply the greedy logic and follow the lowest path:
 			vp = v;
-			v = v_greedy; //wrong this should be the v with the shortest_path
+			v = v_greedy;
 			subtree.push_back(v);
 		}
 
+		//shortest_paths_vals 
+		return shortest_paths_vals;
 	}
 	/*
 
@@ -522,6 +570,95 @@ class Digraph
 
 		std::cout << "Read " << no_lines << "\n";
 		Digraph g = Digraph(adj_lists);
+		return g;
+	}
+
+	static Digraph ParseFileToAdjacencyWeighted(const std::string filename) {
+		printf("Call: ParseFileWeighted");
+		bool skip_first_entry = true;
+		size_t no_lines = 1;
+		size_t line_len = 0;
+		size_t i = 0;
+		size_t _t;
+		FILE* pFile = NULL;
+		char* line = NULL;
+		char* input_char_buffer = NULL;
+		char *low = NULL;
+		char *high = NULL;
+		size_t bsize;
+		size_t csize = sizeof(char);
+
+		unsigned short idx_comma;
+		std::vector<std::vector<size_t>> adj_lists;
+		std::vector<std::vector<size_t>> adj_lists_weights;
+		std::vector<size_t> t_list;
+		std::vector<size_t> t_weights;
+
+		pFile = fopen(filename.c_str(), "r");
+		if (pFile == NULL) { return Digraph(); }
+
+		printf("* reading file: %s\n");
+
+		while (getline(&line, &line_len, pFile) != -1)
+		{
+			skip_first_entry = true;
+			input_char_buffer = strtok(line, " \t"); // "1 2,3\t"
+			if (input_char_buffer == NULL) { 
+				std::cout << " input_char_buffer is empty! file reading issue...\n";
+				fclose(pFile);
+			}
+
+			while (input_char_buffer != NULL) {
+				if (skip_first_entry) { 
+					skip_first_entry = false;
+				} 
+				else 
+				{
+					bsize = sizeof(input_char_buffer);
+					for (auto _k = 0; _k<bsize; _k++) {
+						if (input_char_buffer[_k]==',') {
+							idx_comma = _k;
+							break;
+						}
+					} // ur doing valgrind and thinking about rounding in max/2
+					
+					low = (char*)malloc(csize * (1 + (bsize/2)));
+					high = (char*)malloc(csize * (1 + (bsize/2)));
+					
+					strncpy(low, input_char_buffer, idx_comma-1);
+					strcpy(high, &input_char_buffer[idx_comma+1]);
+
+					_t = (size_t) atoi(low);
+					if (_t > 0) {
+						t_list.push_back(_t - 1);
+						_t = (size_t) atoi(high);
+						t_weights.push_back(_t);
+					}
+				}
+				input_char_buffer = strtok(NULL, "  \t");
+			}
+
+			adj_lists.push_back(t_list);
+			adj_lists_weights.push_back(t_weights);
+			t_list.clear();
+			t_weights.clear();
+			no_lines ++;
+		}
+		
+		int ss = 0;
+
+		for (auto i = 0; i < 10; i++) {
+			printf("- %d: ", i);
+			ss = adj_lists[i].size();
+			for (auto j = 0; j < ss; j++) {
+				
+				printf("%d (%d),",adj_lists[i][j], adj_lists_weights[i][j]);
+			}
+			printf("\n");
+		}
+		
+		printf("* Read (%d) lines\n", no_lines);
+		Digraph g = Digraph(adj_lists, adj_lists_weights);
 		return g;
 	}
 };

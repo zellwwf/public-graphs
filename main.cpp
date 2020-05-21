@@ -5,9 +5,27 @@
 
 #include "digraph.cpp"
 
+void command_dijkstra() {
+    std::string filename; 
+
+    std::cout << "-> Filename: ";
+    std::getline (std::cin,filename);
+    std::cout << "-> FUICK U: ";
+    auto x = Digraph::ParseFileToAdjacencyWeighted(filename);
+
+    auto betengan = x.DijkstrasShortestPath(0);
+    std::cout << "Writing out to file \n";
+
+    for (auto i = 0; i < betengan.size(); i++) {
+         std::cout << betengan[i] << "\n";
+    }
+
+    std::cout << "Dump Done! Bye \n";
+}
+
 //cli.h
 void command_loop() {
-
+    command_dijkstra();
 }
 
 //cli.h 
@@ -24,7 +42,24 @@ void say_hi() {
 int main(int argc, char *argv[]) {
 
     say_hi();
+
+    std::string filename; 
+
+    std::cout << "-> Filename: ";
+    std::getline (std::cin,filename);
+
+    auto x = Digraph::ParseFileToAdjacencyWeighted(filename);
+
     
+    auto betengan = x.DijkstrasShortestPath(0);
+    std::cout << "Writing out to file \n";
+
+    for (auto i = 0; i < betengan.size(); i++) {
+         std::cout << betengan[i] << "\n";
+    }
+
+    std::cout << "Dump Done! Bye \n";
+    /*    
     if (argc > 0) {
         // parse args
         parse_args();
@@ -32,10 +67,10 @@ int main(int argc, char *argv[]) {
         // show commands
         command_loop();
     }
+    */
 
     return 0;
 }
-
 void command_kosaraju() {
     std::string filename; 
 
@@ -56,6 +91,8 @@ void command_kosaraju() {
     MyFile.close();
     std::cout << "Dump Done! Bye \n";
 }
+
+
 
 void command_mincuts() {
     size_t min_cut = 0;
