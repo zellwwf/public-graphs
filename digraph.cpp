@@ -60,7 +60,7 @@ class Digraph
 		size_t _m = 0;
 		size_t _n = adj_lists.size();
 
-		for (auto i = 0; i < adj_lists.size(); i ++) {
+		for (size_t i = 0; i < adj_lists.size(); i ++) {
 			_m += adj_lists[i].size();
 		}
 
@@ -75,7 +75,7 @@ class Digraph
 		size_t _m = 0;
 		size_t _n = adj_lists.size();
 
-		for (auto i = 0; i < adj_lists.size(); i ++) {
+		for (size_t i = 0; i < adj_lists.size(); i ++) {
 			_m += adj_lists[i].size();
 		}
 
@@ -95,18 +95,20 @@ class Digraph
 		//   0: 1 2 3 
 		size_t nvertices = adj_lists.size();
 		size_t i,j;
-
-		printf("\n* G has %d vertices and %d edges \n------------------------------\n", n_vertices(), n_edges());
+		printf("\n* Graph G has %ld vertices and %ld edges \n  -------------------------------------------\n", n_vertices(), n_edges());
 		for (i = 0;i < nvertices; i++) {
 			size_t m_edges = adj_lists[i].size(); 
-			printf("\t%d ", i+1);
+			printf("\t%ld ", i+1);
 			if (is_v_deleted[i]) {
 				printf(" -- deleted -- ");
 			}
 			else 
 			{
 				for (j = 0; j < m_edges; j++) {
-					printf(" %5d", adj_lists[i][j] + 1);
+					printf(" %5ld", adj_lists[i][j] + 1);
+					if (weights.size() > 0) {
+						printf(" (%5ld)", weights[i][j]);
+					}
 				}
 			}
 			printf("\n");
@@ -119,7 +121,7 @@ class Digraph
 		if (new_weights.size() == get_m()) {
 			this->weights = new_weights;
 		} else {
-			WarnPrint("You passed an array of size: %d and we have %d edges only!", new_weights.size(), get_m());
+			WarnPrint("You passed an array of size: %ld and we have %ld edges only!", new_weights.size(), get_m());
 		}
 	}
 
@@ -128,7 +130,7 @@ class Digraph
 	//
 	// Assert that if e is an edge in removee --> e is an edge in replacee
 	void RenameEdges(const size_t replacee, size_t removee) {
-		DebugPrint("Call: RenameEdges\n\tsource: %d - target: %d\n", removee+1, replacee+1);
+		DebugPrint("Call: RenameEdges\n\tsource: %ld - target: %ld\n", removee+1, replacee+1);
 		if (removee == replacee) {
 			WarnPrint("ERROR: Same Vertex\n");
 			return;
@@ -138,8 +140,8 @@ class Digraph
 			return;
 		}
 
-		for (int x=0; x < n_vertices(); x++) {
-			for(int y = 0; y < adj_lists[x].size(); y++) {
+		for (size_t x=0; x < n_vertices(); x++) {
+			for(size_t y = 0; y < adj_lists[x].size(); y++) {
 				if (adj_lists[x][y] == removee) {
 					adj_lists[x][y] = replacee;
 				}
@@ -150,7 +152,7 @@ class Digraph
 
 	// Adds a single edge between two vertices.
 	void AddEdge(size_t i, size_t j) {
-		DebugPrint("Adding Edge (%d, %d)\n", i+1, j+1);
+		DebugPrint("Adding Edge (%ld, %ld)\n", i+1, j+1);
 		if (is_v_deleted[i] || is_v_deleted[j]) {
 			WarnPrint("ERROR: Operating On a Deleted Vertex\n");
 			return;
@@ -166,7 +168,7 @@ class Digraph
 	@deprecated
 	*/
 	void CopyEdges(size_t src, size_t target) {
-		DebugPrint("Call: Copying Edges of %d to %d\n", src+1, target+1);
+		DebugPrint("Call: Copying Edges of %ld to %ld\n", src+1, target+1);
 		if (is_v_deleted[src] || is_v_deleted[target]) {
 			WarnPrint("ERROR: Operating On a Deleted Vertex\n");
 			return;
@@ -174,8 +176,8 @@ class Digraph
 
 		// this block is responsible for making sure the set of edges out of a source, will be copied to target
 		// currently its broken for digraphs since it reverse the direction
-		auto n_refs = adj_lists[src].size();
-		for (auto i = 0; i < n_refs; i++) {
+		size_t n_refs = adj_lists[src].size();
+		for (size_t i = 0; i < n_refs; i++) {
 			auto ref = adj_lists[src][i];
 			this->adj_lists[target].push_back(ref);
 			this->adj_lists[ref].push_back(target); // this makes this method not workj for digraphs @todo @deprecated
@@ -205,7 +207,7 @@ class Digraph
 	
 	// @deprecated -- needs rework on digraphs
 	void RemoveVertex(size_t i) {
-		DebugPrint("Call: Removing Vertex %d\n", i+1);
+		DebugPrint("Call: Removing Vertex %ld\n", i+1);
 		if (is_v_deleted[i]) {
 			return;
 		}
@@ -216,7 +218,7 @@ class Digraph
 		// Erase (Remove) line t == n_edges_of_i
 		// For loops with the erase_remove line is going to be linear in n of edges, t(m)
 		// the loop iterates exactly in_degree of (i) times.
-		for (int x = 0; x < n_out_degree; x++) {
+		for (size_t x = 0; x < n_out_degree; x++) {
 			auto ref = adj_lists[i][x];
 			adj_lists[ref].erase(std::remove(adj_lists[ref].begin(), adj_lists[ref].end(), i), adj_lists[ref].end());
 		}
@@ -232,7 +234,7 @@ class Digraph
 	
 	// @deprecated -- needs rework on digraphs
 	static void Contract(Digraph* g, size_t i, size_t j) {
-		DebugPrint("Call: Contract (remainder: %d, removed: %d)\n", i+1, j+1);
+		DebugPrint("Call: Contract (remainder: %ld, removed: %ld)\n", i+1, j+1);
 		if (i == j) {
 			WarnPrint("ERROR: Same Vertex\n");
 			return;
@@ -242,7 +244,7 @@ class Digraph
 			return;
 		}
 
-		DebugPrint("\t Contracting on Edge (%d, %d) (current edges: %d)\n", i+1, j+1, g->n_edges());
+		DebugPrint("\t Contracting on Edge (%ld, %ld) (current edges: %ld)\n", i+1, j+1, g->n_edges());
 
 		g->CopyEdges(j,i);
 		g->RemoveSelfLoops(i); 
@@ -318,13 +320,13 @@ class Digraph
 
 		if (!initial_pass) {
 			// some O(n) preprocessing to make shit faster
-			for (auto k = 0; k < n; k++) {
+			for (size_t k = 0; k < n; k++) {
 				reorder[g->visitation_order[k]-1] = k; 
 			}
 		}
 
-		for (auto i=0; i < n; i++) {
-			auto vertex = initial_pass ? i : reorder[i];
+		for (size_t i=0; i < n; i++) {
+			size_t vertex = initial_pass ? i : reorder[i];
 			if (g->unexplored[vertex]) {
 
 				g->scc_current_leader = i+1;
@@ -365,14 +367,14 @@ class Digraph
 				coloring + explorings + visitation ordering
 	*/
 	void DFS(size_t vertex, bool initial_pass) {
-		DebugPrint("DFS on %d\n", vertex);
+		DebugPrint("DFS on %ld\n", vertex);
 		scc_sets[vertex] = scc_current_leader;	// coloring strongly connected components with the same color.
 		// reserve mem for stack
 		unexplored[vertex] = false;
 
 		size_t n_edges = adj_lists[vertex].size(); // the number of edges of in v.
-		for (auto i = 0; i < n_edges; i++) {
-			auto new_v = adj_lists[vertex][i];
+		for (size_t i = 0; i < n_edges; i++) {
+			size_t new_v = adj_lists[vertex][i];
 			// solve this: find x such that adj_lists[new_v][x] = vertex;
 			if (unexplored[new_v]) { 
 				DFS(new_v, initial_pass);
@@ -404,11 +406,11 @@ class Digraph
 		auto new_edges = std::vector<std::vector<size_t>> (n_vertices);
 		size_t n_edges = 0;
 
-		for (auto i = 0; i < n_vertices; i++) {
+		for (size_t i = 0; i < n_vertices; i++) {
 
 			n_edges = adj_lists[i].size();
 
-			for (auto j = 0; j < n_edges; j++) {
+			for (size_t j = 0; j < n_edges; j++) {
 				auto target = adj_lists[i][j];
 				new_edges[target].push_back(i); 
 			}
@@ -421,32 +423,31 @@ class Digraph
 	/*
 	@return std::vector<size_t> of all the 'destination' / 'adjacent' wathave u vertices.
 	*/
-	std::vector<size_t> GetAdjList_Subgraph(const std::vector<size_t> vertices) {
+	std::pair<std::vector<size_t>, std::vector<size_t>> GetAdjList_Subgraph(const std::vector<size_t> vertices) {
 		size_t adj_size;
 		std::vector<size_t> c_adj_list;
-		std::vector<size_t> v;	
-		std::map<size_t, bool> map;
+		std::vector<size_t> c_weights;
+		std::vector<size_t> v, w;
 
-		for (auto i=0; i<vertices.size() ; i++) {
+		for (size_t i=0; i<vertices.size() ; i++) {
 			c_adj_list = adj_lists[vertices[i]];
+			c_weights = weights[vertices[i]];
+
 			adj_size = c_adj_list.size();
-			for (auto j=0; j< adj_size; j++) {
-				map.insert(std::pair<size_t,bool>(c_adj_list[j], true));
+			for (size_t j=0; j< adj_size; j++) {
+				v.push_back(c_adj_list[j]);
+				w.push_back(c_weights[j]);
 			}
 		}
 
-		printf("hi");
-		for(std::map<size_t,bool>::iterator it = map.begin(); it != map.end(); ++it) {
-  			v.push_back(it->first);
-		}
-
-		return v;
+		return std::pair<std::vector<size_t>, std::vector<size_t>>(v,w);
 	}
+
 	/*
 
 	*/
     std::vector<size_t> DijkstrasShortestPath(size_t v0) {
-		DebugPrint("DijkstrasShortestPath on %d\n", v0);
+		DebugPrint("DijkstrasShortestPath on %ld\n", v0 +1);
 
 		// Define: vector of shorted_paths_vals, initialized to infinity (or flip all bits to 1s)
 		size_t infinity = std::numeric_limits<size_t>::max();
@@ -465,58 +466,88 @@ class Digraph
 		shortest_paths_vals[v0] = 0;
 		subtree.push_back(v0);
 
-		size_t vp;	// the vertex we came from, the parent.
+		size_t vp = -1;	// the vertex we came from, the parent.
 		size_t v = v0;
-		size_t c_n_edges, c=0;
+		size_t c_n_edges;
 		std::vector<size_t> c_outgoing;
 		std::vector<size_t> c_weights;
 		//std::priority_queue <size_t, std::vector<size_t>, std::greater<size_t>> c_weights;
 	
 		size_t lowest_weight, v_dest, v_greedy, new_s_path, idx_lowest_weight;
-		bool c_i_in_abyss;
-
+		std::vector<size_t>::iterator c_i_in_abyss;
+		std::pair<std::vector<size_t>, std::vector<size_t>> tree_v_w;
 		// WARNING this loop assumes that v0 is connected to each (other) vertex. 
 		while (subtree.size() != n) {
-			c_outgoing = GetAdjList_Subgraph(subtree);
+			printf("tree size: %ld |\t v0: %ld\tcurrent v: %ld, came from: %ld\n", subtree.size(), v0+1, v+1, vp+1);
+			tree_v_w = GetAdjList_Subgraph(subtree);
+			c_outgoing = tree_v_w.first;
+			c_weights =	tree_v_w.second;
 			c_n_edges = c_outgoing.size();
-			c_weights.clear();
-			c_weights.reserve(c_n_edges);
 
-			for (auto i = 0; i < c_n_edges; i++) {
+			printf("\t There are %ld out edges (LIST BELOW), checking which ones is in the a crossing.\n", c_n_edges);
+			for (size_t aa=0; aa < c_n_edges; aa++) {
+				printf("\t*\t(tree,%ld) %ld\n", c_outgoing[aa]+1, c_weights[aa]);
+			}
+			printf("\n");
+
+			for (size_t i = 0; i < c_n_edges; i++) {
 				// pick the one with the lowest weight.
 				v_dest = c_outgoing[i];
-
+				printf("\t Looking at E(%ld, %ld) ... ", v+1, v_dest+1);
 				// Go through the outgoing edges. Note that getting the 'crossing' set of edges
 				// (def as: { (x,y) | x in subtree, y in abyss }) is not θ(1).
 				// @review: I think if work on finding the crossing set of edges i can make it 
 				// faster, without priority queue even? I think i can make it θ(log(n)) if we sort adj list.
 
 				// STD::find assumes UNSORTED (thus fucking slower linear search)
-				c_i_in_abyss = std::find(abyss.begin(), abyss.end(),v_dest) != abyss.end();
+				c_i_in_abyss = std::find(abyss.begin(), abyss.end(),v_dest);
 
 				// if (v, v_dest) is a crossing edge, place it in the heap.
-				if (c_i_in_abyss) { 
-					new_s_path = shortest_paths_vals[v] + weights[v][v_dest];
-					if (shortest_paths_vals[v_dest] > new_s_path) {shortest_paths_vals[v_dest] = new_s_path;}
-					
-					c_weights[i] = shortest_paths_vals[v_dest];
+				if (c_i_in_abyss != abyss.end()) { 
+					auto sp = shortest_paths_vals[v];
+					auto w = c_weights[i];
+					new_s_path = sp + w;
+					printf("It's a crossing edge.. total cost: %ld\n", new_s_path);
+					if (shortest_paths_vals[v_dest] > new_s_path) {
+						shortest_paths_vals[v_dest] = new_s_path;
+					}
 					//c_weights.push(shorted_paths_vals[v_dest]); 
-				} // else just skip the rest of the loop and check the next outgoing edge.
+				}
+				printf("\n");
+				 // else just skip the rest of the loop and check the next outgoing edge.
 			}
+			DebugPrint("Visited ALL crossing edges out of the tree, while standing at %ld\n", v+1);
+
+			DebugPrint("Figuring out lowest cost edge...\n");
 			lowest_weight = infinity;
-			idx_lowest_weight;
-			for (int j = 0; j < c_n_edges; j++) {
+			idx_lowest_weight = 0;
+			for (size_t j = 0; j < c_n_edges; j++) {
+				DebugPrint("Looking at edge going to V%ld, it weights: %ld", c_outgoing[j]+1, c_weights[j]);
+				
 				if (lowest_weight > c_weights[j]) {
+					DebugPrint("\tfound a new min\n");
 					lowest_weight = c_weights[j];
 					idx_lowest_weight = j;
+				} else {
+					DebugPrint("\tnope\n");
 				}
 			}
-			v_greedy = idx_lowest_weight;
+			v_greedy = c_outgoing[idx_lowest_weight];
+			DebugPrint("=> Lowest cost vertex is: V%ld\n", v_greedy+1);
 
 			// Apply the greedy logic and follow the lowest path:
 			vp = v;
+			
+			subtree.push_back(v_greedy);
+			auto idx_vp_abyss = std::find(abyss.begin(), abyss.end(), v_greedy);
+			
+			if (idx_vp_abyss != abyss.end()) {
+				abyss.erase(abyss.erase(idx_vp_abyss));
+			} else {
+				ErrorPrint("A Logical Error Occured, Cannot Find V%ld in Abyss", v);
+			}
+
 			v = v_greedy;
-			subtree.push_back(v);
 		}
 
 		//shortest_paths_vals 
@@ -529,7 +560,6 @@ class Digraph
 		bool skip_first_entry = true;
 		size_t no_lines = 1;
 		size_t line_len = 0;
-		size_t i = 0;
 		size_t _t;
 		FILE* pFile = NULL;
 		char* line = NULL;
@@ -540,7 +570,7 @@ class Digraph
 		pFile = fopen(filename.c_str(), "r");
 		if (pFile == NULL) { return Digraph(); }
 
-		printf("* reading file: %s\n");
+		printf("* reading file: %s\n", filename.c_str());
 
 		while (getline(&line, &line_len, pFile) != -1)
 		{
@@ -569,6 +599,10 @@ class Digraph
 		}
 
 		std::cout << "Read " << no_lines << "\n";
+
+		fclose(pFile);
+		free(line);
+		free(input_char_buffer);
 		Digraph g = Digraph(adj_lists);
 		return g;
 	}
@@ -578,17 +612,16 @@ class Digraph
 		bool skip_first_entry = true;
 		size_t no_lines = 1;
 		size_t line_len = 0;
+		size_t bsize = 0;
 		size_t i = 0;
-		size_t _t;
+		size_t _t = 0;
+		size_t idx_comma = 0;
+
 		FILE* pFile = NULL;
 		char* line = NULL;
 		char* input_char_buffer = NULL;
-		char *low = NULL;
-		char *high = NULL;
-		size_t bsize;
-		size_t csize = sizeof(char);
+		std::string fly;
 
-		unsigned short idx_comma;
 		std::vector<std::vector<size_t>> adj_lists;
 		std::vector<std::vector<size_t>> adj_lists_weights;
 		std::vector<size_t> t_list;
@@ -597,45 +630,47 @@ class Digraph
 		pFile = fopen(filename.c_str(), "r");
 		if (pFile == NULL) { return Digraph(); }
 
-		printf("* reading file: %s\n");
+		printf("* reading file: %s\n",filename.c_str());
 
 		while (getline(&line, &line_len, pFile) != -1)
 		{
 			skip_first_entry = true;
-			input_char_buffer = strtok(line, " \t"); // "1 2,3\t"
+			input_char_buffer = strtok(line, " \t");
 			if (input_char_buffer == NULL) { 
-				std::cout << " input_char_buffer is empty! file reading issue...\n";
+				ErrorPrint("Cannot read your file!\n");
 				fclose(pFile);
 			}
 
 			while (input_char_buffer != NULL) {
+				if ((char)*input_char_buffer == '\r') {
+					//printf(" FUCK U DOCTOR STOP MAKINBG WEIRD FILES!\n");
+					break;
+				}
+				fly = std::string(input_char_buffer);
+				//printf(" SUBLOOP %d (Buffer = %s | %#016x):\n",i, input_char_buffer, (char) *input_char_buffer );
 				if (skip_first_entry) { 
 					skip_first_entry = false;
-				} 
+				}
 				else 
 				{
+
 					bsize = sizeof(input_char_buffer);
-					for (auto _k = 0; _k<bsize; _k++) {
+
+					for (size_t _k = 0; _k<bsize; _k++) {
 						if (input_char_buffer[_k]==',') {
 							idx_comma = _k;
 							break;
 						}
-					} // ur doing valgrind and thinking about rounding in max/2
-					
-					low = (char*)malloc(csize * (1 + (bsize/2)));
-					high = (char*)malloc(csize * (1 + (bsize/2)));
-					
-					strncpy(low, input_char_buffer, idx_comma-1);
-					strcpy(high, &input_char_buffer[idx_comma+1]);
-
-					_t = (size_t) atoi(low);
-					if (_t > 0) {
-						t_list.push_back(_t - 1);
-						_t = (size_t) atoi(high);
-						t_weights.push_back(_t);
 					}
+
+					_t = (size_t) std::stoi(fly.substr(0,idx_comma));
+					t_list.push_back(_t - 1);
+
+					_t = (size_t) std::stoi(fly.substr(idx_comma+1));
+					t_weights.push_back(_t);
 				}
 				input_char_buffer = strtok(NULL, "  \t");
+				i++;
 			}
 
 			adj_lists.push_back(t_list);
@@ -644,21 +679,13 @@ class Digraph
 			t_weights.clear();
 			no_lines ++;
 		}
-		
-		int ss = 0;
 
-		for (auto i = 0; i < 10; i++) {
-			printf("- %d: ", i);
-			ss = adj_lists[i].size();
-			for (auto j = 0; j < ss; j++) {
-				
-				printf("%d (%d),",adj_lists[i][j], adj_lists_weights[i][j]);
-			}
-			printf("\n");
-		}
+		fclose(pFile);
+		free(line);
 		
-		printf("* Read (%d) lines\n", no_lines);
+		printf("* Read (%ld) lines\n", no_lines-1);
 		Digraph g = Digraph(adj_lists, adj_lists_weights);
+
 		return g;
 	}
 };

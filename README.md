@@ -41,26 +41,20 @@ The Code is immflammable and flammable, use at your own risk.
 * I will write the make file a bit later.
 but for now, lets see all the steps
 
+## Dev Notes
+* I had to use valgrind to figure out whats wrong after receiving a very low level error from `__strlen__avx2`.
+It says 
 
 ```gcc -E bin/prprocessor_out.e -S bin/asm.a -C bin/comp.c -o bin/out.o```
 
+Connecting Valgrind with DGB:
+add vgdb=full to valgrind
+```valgrind --leak-check=yes --vgdb=full --track-origins=yes bin/gout.o```
+then run gdb bin/gout.o
 
+```
+gdb bin/gout.o
 
-graph
-directed graph
-tree
-weighted directed graph
-weighted graph..
-
-// assume this is the abstract class
-set<vertices> inbound_vertices(v) {
-    adjlist[v];
-}
-
-set<vertices> outbound_vertices(v) {
-    reverse look up
-}
-
-auto unknown_graph_type = ReadGraph(file.txt);
-
-Tree = ReadGraph(preprocessing)
+target remote | vgdb
+```
+and at this point you should see them connected.

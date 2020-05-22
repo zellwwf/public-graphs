@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
 
     auto x = Digraph::ParseFileToAdjacencyWeighted(filename);
 
-    
+    x.to_s();
     auto betengan = x.DijkstrasShortestPath(0);
     std::cout << "Writing out to file \n";
 
