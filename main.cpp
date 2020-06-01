@@ -5,27 +5,8 @@
 
 #include "digraph.cpp"
 
-void command_dijkstra() {
-    std::string filename; 
-
-    std::cout << "-> Filename: ";
-    std::getline (std::cin,filename);
-    std::cout << "-> FUICK U: ";
-    auto x = Digraph::ParseFileToAdjacencyWeighted(filename);
-
-    auto betengan = x.DijkstrasShortestPath(0);
-    std::cout << "Writing out to file \n";
-
-    for (auto i = 0; i < betengan.size(); i++) {
-         std::cout << betengan[i] << "\n";
-    }
-
-    std::cout << "Dump Done! Bye \n";
-}
-
 //cli.h
 void command_loop() {
-    command_dijkstra();
 }
 
 //cli.h 
@@ -51,11 +32,14 @@ int main(int argc, char *argv[]) {
     auto x = Digraph::ParseFileToAdjacencyWeighted(filename);
 
     x.to_s();
-    auto betengan = x.DijkstrasShortestPath(0);
-    std::cout << "Writing out to file \n";
+    std::pair<std::vector<size_t>, std::vector<size_t>> res = Digraph::Dijkstra(&x, 0);
+    std::cout << "============== Dijkistra Done =============== \n";
 
-    for (auto i = 0; i < betengan.size(); i++) {
-         std::cout << betengan[i] << "\n";
+    auto a1 = res.first;
+    auto a2 = res.second;
+    
+    for (auto i = 0; i < a1.size(); i++) {
+         std::cout << a1[i] << " - " << a2[i] << "\n";
     }
 
     std::cout << "Dump Done! Bye \n";

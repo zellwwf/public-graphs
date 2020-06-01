@@ -421,141 +421,110 @@ class Digraph
 
 
 	/*
+	Should return a Map sorted by weights (keys), with 
 	@return std::vector<size_t> of all the 'destination' / 'adjacent' wathave u vertices.
 	*/
-	std::pair<std::vector<size_t>, std::vector<size_t>> GetAdjList_Subgraph(const std::vector<size_t> vertices) {
-		size_t adj_size;
+	static std::vector<std::tuple<size_t,std::vector<size_t>, std::vector<size_t>>> GetAdjList_Subgraph(const Digraph *g, const std::vector<size_t> vertices) {
+		size_t adj_size, vs;
+		std::vector<std::tuple<size_t,std::vector<size_t>, std::vector<size_t>>> results;
+		std::vector<size_t> c_sources;
 		std::vector<size_t> c_adj_list;
 		std::vector<size_t> c_weights;
 		std::vector<size_t> v, w;
 
+		results.reserve(vertices.size());
+
 		for (size_t i=0; i<vertices.size() ; i++) {
-			c_adj_list = adj_lists[vertices[i]];
-			c_weights = weights[vertices[i]];
+			vs = vertices[i];
+			c_adj_list = g->adj_lists[vs];
+			c_weights = g->weights[vs];
 
 			adj_size = c_adj_list.size();
 			for (size_t j=0; j< adj_size; j++) {
 				v.push_back(c_adj_list[j]);
 				w.push_back(c_weights[j]);
 			}
+			results[i] = std::make_tuple(vs, v, w);
 		}
 
-		return std::pair<std::vector<size_t>, std::vector<size_t>>(v,w);
+		return results;
 	}
 
-	/*
-
-	*/
-    std::vector<size_t> DijkstrasShortestPath(size_t v0) {
-		DebugPrint("DijkstrasShortestPath on %ld\n", v0 +1);
-
-		// Define: vector of shorted_paths_vals, initialized to infinity (or flip all bits to 1s)
-		size_t infinity = std::numeric_limits<size_t>::max();
-		std::vector<size_t> shortest_paths_vals = std::vector<size_t>(n, infinity);
-
-		// Define: the Abyss (Where sp is not defined, infinite)
-		std::vector<size_t> abyss = std::vector<size_t>(n);
-		size_t start = 0;
-		std::iota(abyss.begin(), abyss.end(), start); // [1,2,3,4,5...n-1]
-		abyss.erase(abyss.begin() + v0); // Thanks for counting from 0 to n.
-
-		// Define: Dijsktra's Subtree
-		std::vector<size_t> subtree = std::vector<size_t>();
-		subtree.reserve(n);
-
-		shortest_paths_vals[v0] = 0;
-		subtree.push_back(v0);
-
-		size_t vp = -1;	// the vertex we came from, the parent.
-		size_t v = v0;
-		size_t c_n_edges;
-		std::vector<size_t> c_outgoing;
-		std::vector<size_t> c_weights;
-		//std::priority_queue <size_t, std::vector<size_t>, std::greater<size_t>> c_weights;
-	
-		size_t lowest_weight, v_dest, v_greedy, new_s_path, idx_lowest_weight;
-		std::vector<size_t>::iterator c_i_in_abyss;
-		std::pair<std::vector<size_t>, std::vector<size_t>> tree_v_w;
-		// WARNING this loop assumes that v0 is connected to each (other) vertex. 
-		while (subtree.size() != n) {
-			printf("tree size: %ld |\t v0: %ld\tcurrent v: %ld, came from: %ld\n", subtree.size(), v0+1, v+1, vp+1);
-			tree_v_w = GetAdjList_Subgraph(subtree);
-			c_outgoing = tree_v_w.first;
-			c_weights =	tree_v_w.second;
-			c_n_edges = c_outgoing.size();
-
-			printf("\t There are %ld out edges (LIST BELOW), checking which ones is in the a crossing.\n", c_n_edges);
-			for (size_t aa=0; aa < c_n_edges; aa++) {
-				printf("\t*\t(tree,%ld) %ld\n", c_outgoing[aa]+1, c_weights[aa]);
-			}
-			printf("\n");
-
-			for (size_t i = 0; i < c_n_edges; i++) {
-				// pick the one with the lowest weight.
-				v_dest = c_outgoing[i];
-				printf("\t Looking at E(%ld, %ld) ... ", v+1, v_dest+1);
-				// Go through the outgoing edges. Note that getting the 'crossing' set of edges
-				// (def as: { (x,y) | x in subtree, y in abyss }) is not θ(1).
-				// @review: I think if work on finding the crossing set of edges i can make it 
-				// faster, without priority queue even? I think i can make it θ(log(n)) if we sort adj list.
-
-				// STD::find assumes UNSORTED (thus fucking slower linear search)
-				c_i_in_abyss = std::find(abyss.begin(), abyss.end(),v_dest);
-
-				// if (v, v_dest) is a crossing edge, place it in the heap.
-				if (c_i_in_abyss != abyss.end()) { 
-					auto sp = shortest_paths_vals[v];
-					auto w = c_weights[i];
-					new_s_path = sp + w;
-					printf("It's a crossing edge.. total cost: %ld\n", new_s_path);
-					if (shortest_paths_vals[v_dest] > new_s_path) {
-						shortest_paths_vals[v_dest] = new_s_path;
+	static std::pair<size_t,size_t> GetClosestVertex(const Digraph *g, std::vector<bool> *visited, size_t *vp, std::vector<size_t> *_distances) {
+		size_t min_v;
+		size_t min = std::numeric_limits<size_t>::max();
+		size_t dist;
+		size_t adj_v;
+		for (size_t j = 0; j < g->n; j++) {
+			if (visited->at(j) == true) {
+				DebugPrint("GetClosestVertex of V%lu \n", j + 1);
+				for (size_t i = 0; i < g->adj_lists[j].size(); i++) {
+					dist = g->weights[j][i] + _distances->at(j);
+					adj_v = g->adj_lists[j][i];
+					DebugPrint("\tChecking %lu \n", adj_v + 1);
+					if (visited->at(adj_v) == false && dist < min) {
+						min_v = adj_v;
+						min = dist;
+						*vp = j;
+						DebugPrint("\t\tVmin=%lu | w=%lu | vp=%lu \n", min_v + 1, dist, *vp + 1);
+					} else {
+						DebugPrint("\t\tSkipping this I %lu\n", i+1);
 					}
-					//c_weights.push(shorted_paths_vals[v_dest]); 
 				}
-				printf("\n");
-				 // else just skip the rest of the loop and check the next outgoing edge.
-			}
-			DebugPrint("Visited ALL crossing edges out of the tree, while standing at %ld\n", v+1);
-
-			DebugPrint("Figuring out lowest cost edge...\n");
-			lowest_weight = infinity;
-			idx_lowest_weight = 0;
-			for (size_t j = 0; j < c_n_edges; j++) {
-				DebugPrint("Looking at edge going to V%ld, it weights: %ld", c_outgoing[j]+1, c_weights[j]);
-				
-				if (lowest_weight > c_weights[j]) {
-					DebugPrint("\tfound a new min\n");
-					lowest_weight = c_weights[j];
-					idx_lowest_weight = j;
-				} else {
-					DebugPrint("\tnope\n");
-				}
-			}
-			v_greedy = c_outgoing[idx_lowest_weight];
-			DebugPrint("=> Lowest cost vertex is: V%ld\n", v_greedy+1);
-
-			// Apply the greedy logic and follow the lowest path:
-			vp = v;
-			
-			subtree.push_back(v_greedy);
-			auto idx_vp_abyss = std::find(abyss.begin(), abyss.end(), v_greedy);
-			
-			if (idx_vp_abyss != abyss.end()) {
-				abyss.erase(abyss.erase(idx_vp_abyss));
 			} else {
-				ErrorPrint("A Logical Error Occured, Cannot Find V%ld in Abyss", v);
+				DebugPrint("\tSkipping this J %lu\n", j+1);
 			}
-
-			v = v_greedy;
 		}
 
-		//shortest_paths_vals 
-		return shortest_paths_vals;
+		return std::make_pair(min_v, min);
 	}
-	/*
+	
+	static std::pair<std::vector<size_t>, std::vector<size_t>> Dijkstra(const Digraph *g, const size_t v0) {
+		size_t n = g->n;
+		size_t m = g->m;
+		size_t infinity = std::numeric_limits<size_t>::max();
+		size_t nearest_v, nearest_w, i, j, ith_number_edges, vj, vp, min_dist, new_dist;
 
-	*/
+		std::vector<size_t> ith_edges;
+		std::vector<size_t> ith_weights;
+
+		// Initialize shorted distances ary _distances, and Parent Ary
+		std::vector<size_t> _distances = std::vector<size_t>(n, infinity);
+		std::vector<size_t> _parents = std::vector<size_t>(n);
+		std::vector<bool> _visited = std::vector<bool>(n, false);
+		std::pair<size_t, size_t> nearest;
+		// define tree (of vertices with computed dist_min)
+		// define abyss/unexplored/fringe This ideally should be a priority queue, so it can give u the smallest edge.
+		size_t c=0;
+		std::fill(_parents.begin(), _parents.end(), c++);
+		
+		_distances[v0] = 0;
+		_parents[v0] = 0; // it should be NULL, but NULL is zero, and zero is a valid vertex. but infinity is not.
+		_visited[v0] = true;
+		vp = v0;
+		nearest_v = v0;
+		while (std::find(_visited.begin(), _visited.end(), false) != _visited.end()) {
+			min_dist = infinity;
+			// Look at all the possible paths from v, and update those whose newer cost is lower
+			// if _distances[vj] < weight[v][vj] + _)distance
+			
+			// Find closest vertex such that it is unvisited
+			nearest = GetClosestVertex(g, &_visited, &vp, &_distances);
+			nearest_v = nearest.first;
+			nearest_w = nearest.second;
+			_visited[nearest_v] = true;
+
+			DebugPrint("Standing at V%ld, nearest V is V%ld %ld km away\n", vp, nearest_v, nearest_w);
+			DebugPrint("Looking at Adjacent vertex V%ld\n", vp + 1);
+			// new_dist = distance_to_here + distance_to_new_v;
+			_distances[nearest_v] = nearest_w;
+			_parents[nearest_v] = vp;
+			DebugPrint("==> SPD to V%lu =%u | from: V%lu  \n", nearest_v + 1, _distances[nearest_v], vp + 1);
+		}
+		// Return
+		return std::make_pair(_distances, _parents);
+	}
+
 	static Digraph ParseFileToAdjacency(const std::string filename) {
 		bool skip_first_entry = true;
 		size_t no_lines = 1;
