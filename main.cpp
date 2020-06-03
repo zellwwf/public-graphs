@@ -41,8 +41,27 @@ int main(int argc, char *argv[]) {
     for (auto i = 0; i < a1.size(); i++) {
          std::cout << a1[i] << " - " << a2[i] << "\n";
     }
+    // 7,37,59,82,99,115,133,165,188,197
 
-    std::cout << "Dump Done! Bye \n";
+    size_t sample_out[10];
+    size_t sample_idx[10] = {7,37,59,82,99,115,133,165,188,197};
+
+    std::cout << std::endl;
+    for (auto i = 0; i < 10; i++) {
+        std::cout << sample_idx[i] << ',';
+    }
+
+    std::cout << std::endl;
+    for (auto i = 0; i < 10; i++) {
+        std::cout << a1[sample_idx[i] - 1] << ',';
+    }
+
+    std::cout << std::endl;
+    for (auto i = 0; i < 10; i++) {
+        std::cout << a2[sample_idx[i] - 1] << ',';
+    }
+
+    std::cout << "\n\nDump Done! Bye \n";
     /*    
     if (argc > 0) {
         // parse args

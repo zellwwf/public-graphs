@@ -6,7 +6,7 @@
 #include <map>
 #include <numeric> // USED ONLY FOR IOTA! in Dijsktra
 
-#define DEBUG
+
 #define VERBOSITY 2 // 0, 1, 2 -- (errors, <-- + warns, <-- + info )
 
 #ifdef DEBUG
