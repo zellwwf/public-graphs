@@ -41,7 +41,6 @@ int main(int argc, char *argv[]) {
     for (auto i = 0; i < a1.size(); i++) {
          std::cout << a1[i] << " - " << a2[i] << "\n";
     }
-    // 7,37,59,82,99,115,133,165,188,197
 
     size_t sample_out[10];
     size_t sample_idx[10] = {7,37,59,82,99,115,133,165,188,197};

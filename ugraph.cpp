@@ -1,16 +1,3 @@
-// April 18 - 12:13 PM -- Start on notes
-// 			  12:45 PM -- Code
-// 	          1:45  PM -- Break -- restart pc 
-//            3:12  PM -- fucking i lost the file shits...
-//            5:45  PM -- Break..
-
-// April 19 - 1:30  PM -- Starting again
-
-// April 21 - 10:27 AM -- Make it compile i hope.
-//          - 11:46 AM -- Compiles! -- break
-// After some depression... On April 29 we managed to read file and do some calcs!
-// still a long way to go.
-
 #include <cstdlib>
 #include <vector>
 #include <iostream>
@@ -73,7 +60,7 @@ class UGraph
 	
 	/* Displayers */
 
-	//in honor of ruby
+	// in honor of ruby
 	void to_s() {
 		//   0: 1 2 3 
 		size_t nvertices = adj_lists.size();

@@ -6,7 +6,6 @@
 #include <map>
 #include <numeric> // USED ONLY FOR IOTA! in Dijsktra
 
-
 #define VERBOSITY 2 // 0, 1, 2 -- (errors, <-- + warns, <-- + info )
 
 #ifdef DEBUG
@@ -40,7 +39,8 @@ class Digraph
 	Digraph() {
 		this->n = 0;
 		this->m = 0;
-		// @todo add the pointers / arrays... they will be problematic.
+		// @todo add the pointers / arrays for completeness sake, 
+		// even tho i don't really use this constructor.
 	}
 	
 	// Copy Constructor
@@ -223,8 +223,6 @@ class Digraph
 			adj_lists[ref].erase(std::remove(adj_lists[ref].begin(), adj_lists[ref].end(), i), adj_lists[ref].end());
 		}
 
-		// set of edges where s is source.
-		// set of edges where s is target.
 		this->m -= n_out_degree;
 		adj_lists[i] = std::vector<size_t>(0);	// this is to perseve the ordering (indexing) of adj_lists, for now.
 		is_v_deleted[i] = true;
@@ -251,11 +249,12 @@ class Digraph
 		g->RemoveVertex(j);
 	}
 
+	// @todo Documentation
 	static void KargerMinCut(Digraph* g, size_t* p_cuts) {
 		DebugPrint("Call: KargerMinCut\n");
 
 		Digraph _graph = Digraph(g);
-		size_t v0, v1; // holds the values of the randomly selected edge (v0, v1)
+		size_t v0, v1; // holds the values of the randomly selected edge E=(v0, v1)
 		size_t i, j, x;
 
 		while (_graph.n_vertices() > 2) {
